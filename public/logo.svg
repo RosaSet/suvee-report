@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 180" width="100%" height="100%">
+  <defs>
+    <linearGradient id="suveeGrad1" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#34D399" />
+      <stop offset="35%" stop-color="#059669" />
+      <stop offset="70%" stop-color="#0284C7" />
+      <stop offset="100%" stop-color="#0F2D59" />
+    </linearGradient>
+    <linearGradient id="suveeGrad2" x1="100%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#10B981" />
+      <stop offset="50%" stop-color="#0D9488" />
+      <stop offset="100%" stop-color="#0A2540" />
+    </linearGradient>
+    <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+      <stop offset="0%" stop-color="#0F2D59" />
+      <stop offset="100%" stop-color="#081830" />
+    </linearGradient>
+  </defs>
+
+  <!-- Ribbon S Symbol -->
+  <g transform="translate(15, 15) scale(0.92)">
+    <path d="M 55,20 C 85,15 110,40 100,75 C 95,92 78,105 60,115 C 38,128 30,145 38,162 C 45,178 70,180 82,165 C 68,172 50,168 46,155 C 40,138 52,122 72,110 C 95,95 112,78 108,50 C 102,22 72,5 45,15 Z" fill="url(#suveeGrad1)" />
+    <path d="M 45,18 C 30,22 18,38 18,58 C 18,85 45,105 65,118 C 78,127 88,140 85,155 C 80,172 58,175 40,165 C 55,172 75,168 80,150 C 85,130 68,115 50,102 C 32,88 22,72 25,52 C 28,32 40,22 55,18 Z" fill="url(#suveeGrad2)" opacity="0.95" />
+  </g>
+
+  <!-- Typography SUVÉE -->
+  <text x="145" y="98" font-family="'Plus Jakarta Sans', 'Times New Roman', serif" font-size="76" font-weight="800" fill="url(#textGrad)" letter-spacing="4">SUVÉE</text>
+  
+  <!-- Accent Line & REPORT -->
+  <line x1="145" y1="126" x2="205" y2="126" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" />
+  <text x="215" y="134" font-family="'Plus Jakarta Sans', sans-serif" font-size="28" font-weight="600" fill="#0D9488" letter-spacing="10">REPORT</text>
+  <line x1="375" y1="126" x2="435" y2="126" stroke="#10B981" stroke-width="2.5" stroke-linecap="round" />
+</svg>
