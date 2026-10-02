@@ -53,12 +53,40 @@ export default function DailyReportView({
   const [contentTypeFilter, setContentTypeFilter] = useState('All');
 
   const todayStr = new Date().toISOString().split('T')[0];
+  const isAdmin = currentUser?.role === 'Admin';
+
+  // Helper to determine if an entry belongs to the current user
+  const isMine = (item) => {
+    if (!currentUser) return false;
+    if (!item) return false;
+    
+    // Direct authorId match
+    if (item.authorId && currentUser.id && item.authorId === currentUser.id) return true;
+    
+    const curName = (currentUser.name || '').toLowerCase().trim();
+    const curUsername = (currentUser.username || '').toLowerCase().trim();
+    
+    const authorName = (item.authorName || '').toLowerCase().trim();
+    const editorName = (item.editorName || '').toLowerCase().trim();
+
+    if (curName && (authorName === curName || authorName.includes(curName) || curName.includes(authorName))) return true;
+    if (curUsername && (authorName === curUsername || authorName.includes(curUsername))) return true;
+    if (curName && (editorName === curName || editorName.includes(curName) || curName.includes(editorName))) return true;
+    if (curUsername && (editorName === curUsername || editorName.includes(curUsername))) return true;
+
+    return false;
+  };
+
+  // Staff sees ONLY their own data. Admin sees all.
+  const myDailyReports = isAdmin ? (dailyReports || []) : (dailyReports || []).filter(isMine);
+  const myEditorReports = isAdmin ? (editorReports || []) : (editorReports || []).filter(isMine);
+  const myWeeklyContents = isAdmin ? (weeklyContents || []) : (weeklyContents || []).filter(isMine);
 
   // Weekly content counters
-  const week1Count = (weeklyContents || []).filter(c => c && c.week === 'Week 1').length;
-  const week2Count = (weeklyContents || []).filter(c => c && c.week === 'Week 2').length;
-  const week3Count = (weeklyContents || []).filter(c => c && c.week === 'Week 3').length;
-  const week4Count = (weeklyContents || []).filter(c => c && c.week === 'Week 4').length;
+  const week1Count = myWeeklyContents.filter(c => c && c.week === 'Week 1').length;
+  const week2Count = myWeeklyContents.filter(c => c && c.week === 'Week 2').length;
+  const week3Count = myWeeklyContents.filter(c => c && c.week === 'Week 3').length;
+  const week4Count = myWeeklyContents.filter(c => c && c.week === 'Week 4').length;
 
   // =========================================================
   // 1. BOOST PAGE & TIKTOK FORM STATE (POP-UP MODAL 1)
@@ -87,7 +115,7 @@ export default function DailyReportView({
   // =========================================================
   const [editorForm, setEditorForm] = useState({
     date: todayStr,
-    editorName: 'Sokha (Editor)',
+    editorName: currentUser?.name || 'Video Editor',
     videoTitle: '',
     platform: 'TikTok & Reels',
     videosCount: 2,
@@ -97,6 +125,14 @@ export default function DailyReportView({
     status: 'Ready to Launch',
     notes: ''
   });
+
+  const handleOpenEditorModal = () => {
+    setEditorForm(prev => ({
+      ...prev,
+      editorName: currentUser?.name || prev.editorName || 'Video Editor'
+    }));
+    setShowEditorModal(true);
+  };
 
   // Helper: Calculate week number or weekly total
   const getWeeklyStats = (reports) => {
@@ -116,17 +152,17 @@ export default function DailyReportView({
     return { weeklyVideos, weeklyHooks, avgHooks };
   };
 
-  const weeklyEditorStats = getWeeklyStats(editorReports);
+  const weeklyEditorStats = getWeeklyStats(myEditorReports);
 
   // Overall Stats for Boost Page & TikTok
-  const totalBoostSpend = dailyReports.reduce((sum, r) => sum + Number(r.spend || 0), 0);
-  const totalBoostRevenue = dailyReports.reduce((sum, r) => sum + Number(r.revenue || 0), 0);
-  const totalBoostResults = dailyReports.reduce((sum, r) => sum + Number(r.leads || 0), 0);
+  const totalBoostSpend = myDailyReports.reduce((sum, r) => sum + Number(r.spend || 0), 0);
+  const totalBoostRevenue = myDailyReports.reduce((sum, r) => sum + Number(r.revenue || 0), 0);
+  const totalBoostResults = myDailyReports.reduce((sum, r) => sum + Number(r.leads || 0), 0);
   const overallBoostROAS = totalBoostSpend > 0 ? (totalBoostRevenue / totalBoostSpend).toFixed(2) : '0.00';
 
   // Overall Stats for Video Editor
-  const totalEditorVideos = editorReports.reduce((sum, r) => sum + Number(r.videosCount || 0), 0);
-  const totalEditorHooks = editorReports.reduce((sum, r) => sum + Number(r.hooksCount || 0), 0);
+  const totalEditorVideos = myEditorReports.reduce((sum, r) => sum + Number(r.videosCount || 0), 0);
+  const totalEditorHooks = myEditorReports.reduce((sum, r) => sum + Number(r.hooksCount || 0), 0);
 
   // Handle Add Next Day Milestone in Modal 1
   const handleAddMilestoneDay = () => {
@@ -186,8 +222,8 @@ export default function DailyReportView({
       notes: boostForm.notes || '',
       status: boostForm.status,
       dailyMilestones: boostForm.dailyMilestones,
-      authorId: currentUser?.id || 'usr-marketing',
-      authorName: currentUser?.name || 'Vannak Meas',
+      authorId: currentUser?.id || 'usr-staff',
+      authorName: currentUser?.name || currentUser?.username || 'Staff Member',
       authorRole: currentUser?.role || 'Digital Marketing',
       authorAvatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'
     };
@@ -235,8 +271,9 @@ export default function DailyReportView({
       driveLink: editorForm.driveLink || '',
       status: editorForm.status,
       notes: editorForm.notes || '',
-      authorId: currentUser?.id || 'usr-editor',
-      authorName: currentUser?.name || editorForm.editorName,
+      authorId: currentUser?.id || 'usr-staff',
+      authorName: currentUser?.name || editorForm.editorName || 'Video Editor',
+      editorName: editorForm.editorName || currentUser?.name || 'Video Editor',
       authorRole: currentUser?.role || 'Video Editor',
       authorAvatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150'
     };
@@ -248,7 +285,7 @@ export default function DailyReportView({
 
     setEditorForm({
       date: todayStr,
-      editorName: editorForm.editorName,
+      editorName: currentUser?.name || 'Video Editor',
       videoTitle: '',
       platform: 'TikTok & Reels',
       videosCount: 2,
@@ -260,8 +297,8 @@ export default function DailyReportView({
     });
   };
 
-  // Filtered Boost Reports
-  const filteredBoostReports = (dailyReports || []).filter(r => {
+  // Filtered Boost Reports (Scoped to current staff if not Admin)
+  const filteredBoostReports = myDailyReports.filter(r => {
     if (!r) return false;
     const matchPlatform = platformFilter === 'All' || r.platform === platformFilter;
     const q = (searchQuery || '').toLowerCase();
@@ -275,8 +312,8 @@ export default function DailyReportView({
   // Selected Script for PC Uploaded Preview & Download Modal
   const [selectedScriptContent, setSelectedScriptContent] = useState(null);
 
-  // Filtered Weekly Contents (Fix for White Screen ReferenceError)
-  const filteredWeeklyContents = (weeklyContents || []).filter(c => {
+  // Filtered Weekly Contents (Scoped to current staff if not Admin)
+  const filteredWeeklyContents = myWeeklyContents.filter(c => {
     if (!c || typeof c !== 'object') return false;
     const matchWeek = selectedWeekFilter === 'All' || c.week === selectedWeekFilter;
     const matchType = contentTypeFilter === 'All' || c.contentType === contentTypeFilter;
@@ -295,8 +332,8 @@ export default function DailyReportView({
     return matchWeek && matchType && matchQuery;
   });
 
-  // Filtered Editor Reports
-  const filteredEditorReports = (editorReports || []).filter(e => {
+  // Filtered Editor Reports (Scoped to current staff if not Admin)
+  const filteredEditorReports = myEditorReports.filter(e => {
     if (!e) return false;
     const q = (searchQuery || '').toLowerCase();
     return !q || 
@@ -316,7 +353,9 @@ export default function DailyReportView({
             ផ្ទាំងបញ្ចូលទិន្នន័យការងារ (Staff Input Portal)
           </h2>
           <p>
-            បញ្ចូលរបាយការណ៍ Boost Page & TikTok (Paid Ads), ការងារ Video Editor ឬ Upload Content តាម Week
+            {isAdmin 
+              ? 'ទិដ្ឋភាព Boss / Manager: បង្ហាញរបាយការណ៍ និង Uploads របស់គ្រប់បុគ្គលិកទាំងអស់' 
+              : `ទិដ្ឋភាពផ្ទាល់ខ្លួន: បង្ហាញតែទិន្នន័យដែល ${currentUser?.name || 'លោកអ្នក'} បាន Upload ផ្ទាល់ប៉ុណ្ណោះ (មិនបង្ហាញរបស់បុគ្គលិកផ្សេងទេ)`}
           </p>
         </div>
 
@@ -330,7 +369,7 @@ export default function DailyReportView({
           >
             <span>🔵 Boost Page & 🎵 TikTok</span>
             <span style={{ fontSize: '0.75rem', background: activeColumn === 'boost' ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.08)', padding: '2px 7px', borderRadius: '10px' }}>
-              {dailyReports.length}
+              {myDailyReports.length}
             </span>
           </button>
 
@@ -343,7 +382,7 @@ export default function DailyReportView({
             <Scissors size={15} />
             <span>✂️ Video Editor</span>
             <span style={{ fontSize: '0.75rem', background: activeColumn === 'editor' ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.08)', padding: '2px 7px', borderRadius: '10px' }}>
-              {editorReports.length}
+              {myEditorReports.length}
             </span>
           </button>
 
@@ -356,7 +395,7 @@ export default function DailyReportView({
             <Calendar size={15} />
             <span>📅 Upload Content តាម Week</span>
             <span style={{ fontSize: '0.75rem', background: activeColumn === 'content' ? 'rgba(0,0,0,0.25)' : 'rgba(255,255,255,0.08)', padding: '2px 7px', borderRadius: '10px' }}>
-              {weeklyContents.length}
+              {myWeeklyContents.length}
             </span>
           </button>
         </div>
@@ -412,7 +451,7 @@ export default function DailyReportView({
           
           <div style={{ marginTop: '0.75rem', fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
             <span>* ចុចដើម្បីមើល Paid Ads Log</span>
-            <span style={{ color: 'var(--emerald-main)', fontWeight: 700 }}>{dailyReports.length} Campaigns</span>
+            <span style={{ color: 'var(--emerald-main)', fontWeight: 700 }}>{myDailyReports.length} Campaigns</span>
           </div>
         </div>
 
@@ -437,7 +476,7 @@ export default function DailyReportView({
             <button 
               className="btn btn-primary"
               style={{ padding: '0.45rem 0.85rem', fontSize: '0.8rem' }}
-              onClick={(e) => { e.stopPropagation(); setShowEditorModal(true); }}
+              onClick={(e) => { e.stopPropagation(); handleOpenEditorModal(); }}
             >
               <PlusCircle size={14} />
               <span>+ Editor Report</span>
@@ -528,7 +567,7 @@ export default function DailyReportView({
 
           <div style={{ marginTop: '0.75rem', fontSize: '0.78rem', color: 'var(--text-secondary)', display: 'flex', justifyContent: 'space-between' }}>
             <span>* បែងចែកតាមសប្តាហ៍ក្នុងខែ</span>
-            <span style={{ color: 'var(--emerald-main)', fontWeight: 700 }}>សរុប: {weeklyContents.length} Contents</span>
+            <span style={{ color: 'var(--emerald-main)', fontWeight: 700 }}>សរុប: {myWeeklyContents.length} Contents</span>
           </div>
         </div>
 
@@ -703,7 +742,7 @@ export default function DailyReportView({
               </p>
             </div>
 
-            <button className="btn btn-primary" onClick={() => setShowEditorModal(true)}>
+            <button className="btn btn-primary" onClick={handleOpenEditorModal}>
               <PlusCircle size={16} />
               <span>+ បញ្ចូលការងារ Editor</span>
             </button>
@@ -910,11 +949,11 @@ export default function DailyReportView({
               ជ្រើសរើសសប្តាហ៍:
             </span>
             {[
-              { id: 'All', label: 'ទាំងអស់ (All Weeks)', count: (weeklyContents || []).length },
-              { id: 'Week 1', label: 'Week 1 (01 - 07)', count: (weeklyContents || []).filter(c => c && c.week === 'Week 1').length },
-              { id: 'Week 2', label: 'Week 2 (08 - 14)', count: (weeklyContents || []).filter(c => c && c.week === 'Week 2').length },
-              { id: 'Week 3', label: 'Week 3 (15 - 21)', count: (weeklyContents || []).filter(c => c && c.week === 'Week 3').length },
-              { id: 'Week 4', label: 'Week 4 (22 - 31)', count: (weeklyContents || []).filter(c => c && c.week === 'Week 4').length }
+              { id: 'All', label: 'ទាំងអស់ (All Weeks)', count: myWeeklyContents.length },
+              { id: 'Week 1', label: 'Week 1 (01 - 07)', count: week1Count },
+              { id: 'Week 2', label: 'Week 2 (08 - 14)', count: week2Count },
+              { id: 'Week 3', label: 'Week 3 (15 - 21)', count: week3Count },
+              { id: 'Week 4', label: 'Week 4 (22 - 31)', count: week4Count }
             ].map(w => (
               <button
                 key={w.id}

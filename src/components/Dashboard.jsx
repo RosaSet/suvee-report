@@ -244,12 +244,21 @@ export default function Dashboard({
   // Filter for Current User (Personal Stats for Staff View)
   const isMine = (item) => {
     if (!currentUser) return false;
-    return (
-      item?.authorId === currentUser?.id ||
-      item?.editorName?.toLowerCase() === currentUser?.name?.toLowerCase() ||
-      item?.authorName?.toLowerCase() === currentUser?.name?.toLowerCase() ||
-      item?.authorName?.toLowerCase() === currentUser?.username?.toLowerCase()
-    );
+    if (!item) return false;
+    if (item.authorId && currentUser.id && item.authorId === currentUser.id) return true;
+    
+    const curName = (currentUser.name || '').toLowerCase().trim();
+    const curUsername = (currentUser.username || '').toLowerCase().trim();
+    
+    const authorName = (item.authorName || '').toLowerCase().trim();
+    const editorName = (item.editorName || '').toLowerCase().trim();
+
+    if (curName && (authorName === curName || authorName.includes(curName) || curName.includes(authorName))) return true;
+    if (curUsername && (authorName === curUsername || authorName.includes(curUsername))) return true;
+    if (curName && (editorName === curName || editorName.includes(curName) || curName.includes(editorName))) return true;
+    if (curUsername && (editorName === curUsername || editorName.includes(curUsername))) return true;
+
+    return false;
   };
 
   const myBoostReports = (dailyReports || []).filter(isMine);
@@ -273,7 +282,7 @@ export default function Dashboard({
 
   const myAllSubmissions = allSubmissions.filter(isMine);
 
-  const baseFeed = staffFeedScope === 'mine' ? myAllSubmissions : allSubmissions;
+  const baseFeed = myAllSubmissions;
   const filteredFeed = baseFeed.filter(item => {
     if (feedFilter === 'boost') return item.feedType === 'boost';
     if (feedFilter === 'editor') return item.feedType === 'editor';
@@ -1694,35 +1703,12 @@ export default function Dashboard({
               </h3>
             </div>
             <p style={{ margin: '4px 0 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-              {staffFeedScope === 'mine' 
-                ? `បង្ហាញតែទិន្នន័យដែល ${currentUser?.name || 'អ្នក'} បាន Upload (${myAllSubmissions.length} កំណត់ត្រា)` 
-                : `បង្ហាញទិន្នន័យរបស់គ្រប់ Staff ទាំងអស់ក្នុងប្រព័ន្ធ (${allSubmissions.length} កំណត់ត្រា)`}
+              បង្ហាញតែទិន្នន័យដែល {currentUser?.name || 'អ្នក'} បាន Upload ផ្ទាល់ ({myAllSubmissions.length} កំណត់ត្រា)
             </p>
           </div>
 
-          {/* Scope and Department Filters */}
+          {/* Department Filters for Personal Uploads */}
           <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', alignItems: 'center' }}>
-            {/* Scope Switcher: My uploads vs All staff */}
-            <div style={{ display: 'flex', background: 'var(--dark-inset)', padding: '3px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
-              <button
-                type="button"
-                className={`btn ${staffFeedScope === 'mine' ? 'btn-primary' : 'btn-outline'}`}
-                style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', border: 'none' }}
-                onClick={() => setStaffFeedScope('mine')}
-                title="បង្ហាញតែទិន្នន័យដែលខ្ញុំបាន upload"
-              >
-                👤 ទិន្នន័យខ្ញុំផ្ទាល់ ({myAllSubmissions.length})
-              </button>
-              <button
-                type="button"
-                className={`btn ${staffFeedScope === 'all' ? 'btn-primary' : 'btn-outline'}`}
-                style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', border: 'none' }}
-                onClick={() => setStaffFeedScope('all')}
-                title="បង្ហាញទិន្នន័យក្រុមការងារទាំងអស់"
-              >
-                👥 គ្រប់ Staff ទាំងអស់ ({allSubmissions.length})
-              </button>
-            </div>
 
             {/* Department Filter */}
             <div style={{ display: 'flex', gap: '0.35rem', background: 'var(--bg-glass)', padding: '3px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
