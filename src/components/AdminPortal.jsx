@@ -296,22 +296,6 @@ export default function AdminPortal({
           </div>
         </div>
 
-        <div className="glass-card stat-card" style={{ padding: '1.25rem' }}>
-          <div className="stat-card-header">
-            <span className="stat-label">ថវិកា Boost បានចាយ</span>
-            <div className="stat-icon-wrapper gold">
-              <DollarSign size={18} />
-            </div>
-          </div>
-          <div className="stat-value" style={{ color: '#FACC15', fontSize: '1.75rem' }}>
-            ${totalBoostSpendMonitored.toFixed(2)}
-          </div>
-          <div className="stat-footer">
-            <span style={{ fontSize: '0.75rem', color: 'var(--text-secondary)' }}>
-              Facebook & TikTok Ads
-            </span>
-          </div>
-        </div>
 
         <div className="glass-card stat-card" style={{ padding: '1.25rem' }}>
           <div className="stat-card-header">
