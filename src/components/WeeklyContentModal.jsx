@@ -121,10 +121,20 @@ export default function WeeklyContentModal({
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    if (!form.title.trim()) {
+    const cleanTitle = String(form.title || '').trim();
+    if (!cleanTitle) {
       alert("សូមបញ្ចូលប្រធានបទ Content (Title / Hook)!");
       return;
     }
+
+    const cleanLink = (val) => {
+      const trimmed = String(val || '').trim();
+      if (!trimmed) return '';
+      if (!trimmed.startsWith('http://') && !trimmed.startsWith('https://')) {
+        return `https://${trimmed}`;
+      }
+      return trimmed;
+    };
 
     const weekLabels = {
       'Week 1': 'Week 1 (ថ្ងៃទី 01 - 07)',
@@ -135,28 +145,30 @@ export default function WeeklyContentModal({
 
     const newContent = {
       id: `cnt-${Date.now()}`,
-      week: form.week,
-      weekLabel: weekLabels[form.week] || form.week,
-      date: form.date,
-      title: form.title.trim(),
-      contentType: form.contentType,
-      platform: form.platform,
-      driveLink: form.driveLink.trim(),
-      boostLink: form.boostLink.trim(),
-      status: form.status,
-      notes: form.notes.trim(),
+      week: form.week || 'Week 1',
+      weekLabel: weekLabels[form.week] || form.week || 'Week 1',
+      date: form.date || todayStr,
+      title: cleanTitle,
+      contentType: form.contentType || 'Short-form Video (9:16)',
+      platform: form.platform || 'TikTok & Reels',
+      driveLink: cleanLink(form.driveLink),
+      boostLink: cleanLink(form.boostLink),
+      status: form.status || 'Ready to Launch',
+      notes: String(form.notes || '').trim(),
       // Script File from PC
-      scriptFileName: scriptFile?.name || '',
-      scriptFileSize: scriptFile?.size || '',
-      scriptFileUrl: scriptFile?.dataUrl || '',
-      scriptText: (scriptText || scriptFile?.textContent || '').trim(),
+      scriptFileName: typeof scriptFile?.name === 'string' ? scriptFile.name : '',
+      scriptFileSize: typeof scriptFile?.size === 'string' ? scriptFile.size : '',
+      scriptFileUrl: typeof scriptFile?.dataUrl === 'string' ? scriptFile.dataUrl : '',
+      scriptText: String(scriptText || scriptFile?.textContent || '').trim(),
       authorId: currentUser?.id || 'usr-marketing',
       authorName: currentUser?.name || 'Staff Member',
       authorRole: currentUser?.role || 'Digital Marketing',
       authorAvatar: currentUser?.avatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
     };
 
-    onAddContent(newContent);
+    if (onAddContent) {
+      onAddContent(newContent);
+    }
     onClose();
 
     // Reset form
@@ -303,7 +315,7 @@ export default function WeeklyContentModal({
                 <span>Link Google Drive (ឯកសារដើម)</span>
               </label>
               <input 
-                type="url" 
+                type="text" 
                 className="form-input" 
                 placeholder="https://drive.google.com/..."
                 value={form.driveLink}
@@ -317,7 +329,7 @@ export default function WeeklyContentModal({
                 <span>Link Post / Boost (TikTok/FB)</span>
               </label>
               <input 
-                type="url" 
+                type="text" 
                 className="form-input" 
                 placeholder="https://facebook.com/... ឬ TikTok"
                 value={form.boostLink}
@@ -357,18 +369,18 @@ export default function WeeklyContentModal({
               </span>
             </div>
 
-            {/* Hidden native file input with id and ref */}
+            {/* Accessible hidden native file input */}
             <input 
               id="pc-script-file-input"
               type="file" 
               ref={fileInputRef}
-              style={{ display: 'none' }}
+              style={{ position: 'absolute', width: '1px', height: '1px', padding: 0, margin: '-1px', overflow: 'hidden', clip: 'rect(0,0,0,0)', border: 0 }}
               onChange={handleScriptFileChange}
             />
 
             {!scriptFile ? (
-              <label 
-                htmlFor="pc-script-file-input"
+              <div 
+                onClick={() => fileInputRef.current?.click()}
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
@@ -410,7 +422,12 @@ export default function WeeklyContentModal({
                 <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.65rem' }}>
                   ទម្លាក់ File ឬ Click ភ្ជាប់ឯកសារ Script (Word .docx, PDF, Text .txt, Images...)
                 </div>
-                <div
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    fileInputRef.current?.click();
+                  }}
                   style={{
                     fontSize: '0.78rem',
                     padding: '0.45rem 1rem',
@@ -421,13 +438,14 @@ export default function WeeklyContentModal({
                     borderRadius: '6px',
                     display: 'inline-flex',
                     alignItems: 'center',
-                    gap: '6px'
+                    gap: '6px',
+                    cursor: 'pointer'
                   }}
                 >
                   <FolderOpen size={15} />
                   <span>📂 ជ្រើសរើស File ពី PC</span>
-                </div>
-              </label>
+                </button>
+              </div>
             ) : (
               <div style={{
                 display: 'flex',

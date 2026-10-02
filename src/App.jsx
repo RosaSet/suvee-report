@@ -145,18 +145,45 @@ export default function App() {
     return INITIAL_EDITOR_REPORTS;
   });
 
+  const sanitizeWeeklyContent = (item) => {
+    if (!item || typeof item !== 'object') return null;
+    return {
+      id: item.id || `cnt-${Date.now()}-${Math.random()}`,
+      week: item.week || 'Week 1',
+      weekLabel: item.weekLabel || item.week || 'Week 1',
+      date: item.date || '2026-10-01',
+      title: typeof item.title === 'string' ? item.title : (item.title?.name || 'Untitled Content'),
+      contentType: item.contentType || 'Short-form Video (9:16)',
+      platform: item.platform || 'TikTok & Reels',
+      driveLink: typeof item.driveLink === 'string' ? item.driveLink : '',
+      boostLink: typeof item.boostLink === 'string' ? item.boostLink : '',
+      status: item.status || 'Ready to Launch',
+      notes: typeof item.notes === 'string' ? item.notes : '',
+      scriptFileName: typeof item.scriptFileName === 'string' ? item.scriptFileName : (item.scriptFileName?.name || ''),
+      scriptFileSize: typeof item.scriptFileSize === 'string' ? item.scriptFileSize : '',
+      scriptFileUrl: typeof item.scriptFileUrl === 'string' ? item.scriptFileUrl : '',
+      scriptText: typeof item.scriptText === 'string' ? item.scriptText : '',
+      authorId: item.authorId || 'usr-marketing',
+      authorName: item.authorName || 'Staff Member',
+      authorRole: item.authorRole || 'Digital Marketing',
+      authorAvatar: item.authorAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'
+    };
+  };
+
   // Weekly Contents State (Upload Content តាម Week)
   const [weeklyContents, setWeeklyContents] = useState(() => {
     const saved = localStorage.getItem('suvee_weekly_contents');
     if (saved) {
       try {
         const parsed = JSON.parse(saved);
-        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          return parsed.map(sanitizeWeeklyContent).filter(Boolean);
+        }
       } catch (e) {
         console.error("Error loading weekly contents:", e);
       }
     }
-    return INITIAL_WEEKLY_CONTENTS;
+    return INITIAL_WEEKLY_CONTENTS.map(sanitizeWeeklyContent).filter(Boolean);
   });
 
   // Clear all data to fresh empty state
@@ -185,7 +212,7 @@ export default function App() {
     } catch (e) {
       console.warn("Storage quota exceeded, storing lightweight copy without huge dataUrls", e);
       try {
-        const lightweight = weeklyContents.map(c => ({
+        const lightweight = (weeklyContents || []).map(c => ({
           ...c,
           scriptFileUrl: c.scriptFileUrl?.length > 100000 ? '' : c.scriptFileUrl
         }));
@@ -197,10 +224,10 @@ export default function App() {
   }, [weeklyContents]);
 
   // Overall Aggregated Stats
-  const totalSpend = dailyReports.reduce((sum, r) => sum + Number(r.spend || 0), 0);
-  const totalLeads = dailyReports.reduce((sum, r) => sum + Number(r.leads || 0), 0);
-  const totalRevenue = dailyReports.reduce((sum, r) => sum + Number(r.revenue || 0), 0);
-  const totalSalesClosed = dailyReports.reduce((sum, r) => sum + Number(r.salesClosed || 0), 0);
+  const totalSpend = (dailyReports || []).reduce((sum, r) => sum + Number(r.spend || 0), 0);
+  const totalLeads = (dailyReports || []).reduce((sum, r) => sum + Number(r.leads || 0), 0);
+  const totalRevenue = (dailyReports || []).reduce((sum, r) => sum + Number(r.revenue || 0), 0);
+  const totalSalesClosed = (dailyReports || []).reduce((sum, r) => sum + Number(r.salesClosed || 0), 0);
   const avgCPA = totalLeads > 0 ? totalSpend / totalLeads : 0;
   const overallROAS = totalSpend > 0 ? totalRevenue / totalSpend : 0;
 
@@ -219,9 +246,11 @@ export default function App() {
       dataService.fetchAll().then(res => {
         if (res) {
           if (res.users && res.users.length > 0) setUsers(res.users);
-          if (res.dailyReports !== undefined) setDailyReports(res.dailyReports);
-          if (res.editorReports !== undefined) setEditorReports(res.editorReports);
-          if (res.weeklyContents !== undefined) setWeeklyContents(res.weeklyContents);
+          if (res.dailyReports !== undefined) setDailyReports(res.dailyReports || []);
+          if (res.editorReports !== undefined) setEditorReports(res.editorReports || []);
+          if (res.weeklyContents !== undefined) {
+            setWeeklyContents((res.weeklyContents || []).map(sanitizeWeeklyContent).filter(Boolean));
+          }
         }
       });
     }
@@ -262,13 +291,15 @@ export default function App() {
   };
 
   const handleUpdateWeeklyContent = (updatedContent) => {
-    setWeeklyContents(prev => prev.map(c => c.id === updatedContent.id ? updatedContent : c));
-    dataService.updateWeeklyContent(updatedContent);
+    const cleanContent = sanitizeWeeklyContent(updatedContent) || updatedContent;
+    setWeeklyContents(prev => prev.map(c => c.id === cleanContent.id ? cleanContent : c));
+    dataService.updateWeeklyContent(cleanContent);
   };
 
   const handleAddWeeklyContent = (newContent) => {
-    setWeeklyContents(prev => [newContent, ...prev]);
-    dataService.insertWeeklyContent(newContent);
+    const cleanContent = sanitizeWeeklyContent(newContent) || newContent;
+    setWeeklyContents(prev => [cleanContent, ...prev]);
+    dataService.insertWeeklyContent(cleanContent);
   };
 
   const handleDeleteWeeklyContent = (id) => {

@@ -37,23 +37,29 @@ export default function StaffInspectionModal({
   if (!isOpen || !staff) return null;
 
   // Filter reports specifically for this staff member
-  const staffBoostReports = dailyReports.filter(r => 
-    r.authorId === staff.id || 
-    r.authorName?.toLowerCase() === staff.name?.toLowerCase() ||
-    r.authorName?.toLowerCase() === staff.username?.toLowerCase()
+  const staffBoostReports = (dailyReports || []).filter(r => 
+    r && (
+      r.authorId === staff?.id || 
+      r.authorName?.toLowerCase() === staff?.name?.toLowerCase() ||
+      r.authorName?.toLowerCase() === staff?.username?.toLowerCase()
+    )
   );
 
-  const staffEditorReports = editorReports.filter(r => 
-    r.authorId === staff.id || 
-    r.authorName?.toLowerCase() === staff.name?.toLowerCase() ||
-    r.editorName?.toLowerCase() === staff.name?.toLowerCase() ||
-    r.authorName?.toLowerCase() === staff.username?.toLowerCase()
+  const staffEditorReports = (editorReports || []).filter(r => 
+    r && (
+      r.authorId === staff?.id || 
+      r.authorName?.toLowerCase() === staff?.name?.toLowerCase() ||
+      r.authorName?.toLowerCase() === staff?.username?.toLowerCase() ||
+      r.editorName?.toLowerCase() === staff?.name?.toLowerCase()
+    )
   );
 
-  const staffWeeklyContents = weeklyContents.filter(r => 
-    r.authorId === staff.id || 
-    r.authorName?.toLowerCase() === staff.name?.toLowerCase() ||
-    r.authorName?.toLowerCase() === staff.username?.toLowerCase()
+  const staffWeeklyContents = (weeklyContents || []).filter(r => 
+    r && (
+      r.authorId === staff?.id || 
+      r.authorName?.toLowerCase() === staff?.name?.toLowerCase() ||
+      r.authorName?.toLowerCase() === staff?.username?.toLowerCase()
+    )
   );
 
   // Department 1: Boost metrics for this staff
@@ -68,10 +74,10 @@ export default function StaffInspectionModal({
   const staffAvgHooks = staffVideos > 0 ? (staffHooks / staffVideos).toFixed(1) : '0.0';
 
   // Department 3: Weekly Content metrics for this staff
-  const staffW1 = staffWeeklyContents.filter(c => c.week === 'Week 1').length;
-  const staffW2 = staffWeeklyContents.filter(c => c.week === 'Week 2').length;
-  const staffW3 = staffWeeklyContents.filter(c => c.week === 'Week 3').length;
-  const staffW4 = staffWeeklyContents.filter(c => c.week === 'Week 4').length;
+  const staffW1 = staffWeeklyContents.filter(c => c && c.week === 'Week 1').length;
+  const staffW2 = staffWeeklyContents.filter(c => c && c.week === 'Week 2').length;
+  const staffW3 = staffWeeklyContents.filter(c => c && c.week === 'Week 3').length;
+  const staffW4 = staffWeeklyContents.filter(c => c && c.week === 'Week 4').length;
   const staffTotalContents = staffWeeklyContents.length;
 
   const totalAllUploads = staffBoostReports.length + staffEditorReports.length + staffWeeklyContents.length;

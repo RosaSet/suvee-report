@@ -168,14 +168,16 @@ export default function Dashboard({
   // =========================================================
   // DEPARTMENT 3: WEEKLY CONTENT STATS & AUTHORS
   // =========================================================
-  const w1Count = weeklyContents.filter(c => c.week === 'Week 1').length;
-  const w2Count = weeklyContents.filter(c => c.week === 'Week 2').length;
-  const w3Count = weeklyContents.filter(c => c.week === 'Week 3').length;
-  const w4Count = weeklyContents.filter(c => c.week === 'Week 4').length;
-  const contentAuthors = Array.from(new Set(weeklyContents.map(c => c.authorName).filter(Boolean)));
+  const safeWeeklyContents = (weeklyContents || []).filter(Boolean);
+  const w1Count = safeWeeklyContents.filter(c => c.week === 'Week 1').length;
+  const w2Count = safeWeeklyContents.filter(c => c.week === 'Week 2').length;
+  const w3Count = safeWeeklyContents.filter(c => c.week === 'Week 3').length;
+  const w4Count = safeWeeklyContents.filter(c => c.week === 'Week 4').length;
+  const contentAuthors = Array.from(new Set(safeWeeklyContents.map(c => c.authorName).filter(Boolean)));
 
   // Filtered detailed reports for Admin
-  const filteredBoostReports = dailyReports.filter(r => {
+  const filteredBoostReports = (dailyReports || []).filter(r => {
+    if (!r) return false;
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return (r.campaignName || '').toLowerCase().includes(q) ||
@@ -183,7 +185,8 @@ export default function Dashboard({
            (r.platform || '').toLowerCase().includes(q);
   });
 
-  const filteredEditorReports = editorReports.filter(r => {
+  const filteredEditorReports = (editorReports || []).filter(r => {
+    if (!r) return false;
     if (!searchQuery.trim()) return true;
     const q = searchQuery.toLowerCase();
     return (r.videoTitle || '').toLowerCase().includes(q) ||
@@ -191,7 +194,7 @@ export default function Dashboard({
            (r.authorName || '').toLowerCase().includes(q);
   });
 
-  const filteredWeeklyContents = weeklyContents.filter(c => {
+  const filteredWeeklyContents = safeWeeklyContents.filter(c => {
     const matchWeek = weekFilter === 'All' || c.week === weekFilter;
     if (!matchWeek) return false;
     if (!searchQuery.trim()) return true;
@@ -225,10 +228,10 @@ export default function Dashboard({
       authorRole: e.authorRole || 'Video Editor',
       authorAvatar: e.authorAvatar || 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150'
     })),
-    ...weeklyContents.map(c => ({
+    ...safeWeeklyContents.map(c => ({
       ...c,
       feedType: 'content',
-      feedTypeName: `Content ${c.week}`,
+      feedTypeName: `Content ${c.week || 'Week 1'}`,
       feedIcon: Calendar,
       feedColor: '#FACC15',
       displayTitle: c.title,

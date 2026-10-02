@@ -277,16 +277,21 @@ export default function DailyReportView({
 
   // Filtered Weekly Contents (Fix for White Screen ReferenceError)
   const filteredWeeklyContents = (weeklyContents || []).filter(c => {
-    if (!c) return false;
+    if (!c || typeof c !== 'object') return false;
     const matchWeek = selectedWeekFilter === 'All' || c.week === selectedWeekFilter;
     const matchType = contentTypeFilter === 'All' || c.contentType === contentTypeFilter;
-    const q = (searchQuery || '').toLowerCase();
-    const matchQuery = !q || 
-      (c.title && c.title.toLowerCase().includes(q)) ||
-      (c.authorName && c.authorName.toLowerCase().includes(q)) ||
-      (c.notes && c.notes.toLowerCase().includes(q)) ||
-      (c.scriptFileName && c.scriptFileName.toLowerCase().includes(q)) ||
-      (c.scriptText && c.scriptText.toLowerCase().includes(q));
+    const q = (searchQuery || '').trim().toLowerCase();
+    if (!q) return matchWeek && matchType;
+
+    const titleStr = typeof c.title === 'string' ? c.title.toLowerCase() : '';
+    const authorStr = typeof c.authorName === 'string' ? c.authorName.toLowerCase() : '';
+    const notesStr = typeof c.notes === 'string' ? c.notes.toLowerCase() : '';
+    const scriptFileStr = typeof c.scriptFileName === 'string' 
+      ? c.scriptFileName.toLowerCase() 
+      : (c.scriptFileName?.name ? String(c.scriptFileName.name).toLowerCase() : '');
+    const scriptTextStr = typeof c.scriptText === 'string' ? c.scriptText.toLowerCase() : '';
+
+    const matchQuery = titleStr.includes(q) || authorStr.includes(q) || notesStr.includes(q) || scriptFileStr.includes(q) || scriptTextStr.includes(q);
     return matchWeek && matchType && matchQuery;
   });
 
@@ -905,11 +910,11 @@ export default function DailyReportView({
               ជ្រើសរើសសប្តាហ៍:
             </span>
             {[
-              { id: 'All', label: 'ទាំងអស់ (All Weeks)', count: weeklyContents.length },
-              { id: 'Week 1', label: 'Week 1 (01 - 07)', count: weeklyContents.filter(c => c.week === 'Week 1').length },
-              { id: 'Week 2', label: 'Week 2 (08 - 14)', count: weeklyContents.filter(c => c.week === 'Week 2').length },
-              { id: 'Week 3', label: 'Week 3 (15 - 21)', count: weeklyContents.filter(c => c.week === 'Week 3').length },
-              { id: 'Week 4', label: 'Week 4 (22 - 31)', count: weeklyContents.filter(c => c.week === 'Week 4').length }
+              { id: 'All', label: 'ទាំងអស់ (All Weeks)', count: (weeklyContents || []).length },
+              { id: 'Week 1', label: 'Week 1 (01 - 07)', count: (weeklyContents || []).filter(c => c && c.week === 'Week 1').length },
+              { id: 'Week 2', label: 'Week 2 (08 - 14)', count: (weeklyContents || []).filter(c => c && c.week === 'Week 2').length },
+              { id: 'Week 3', label: 'Week 3 (15 - 21)', count: (weeklyContents || []).filter(c => c && c.week === 'Week 3').length },
+              { id: 'Week 4', label: 'Week 4 (22 - 31)', count: (weeklyContents || []).filter(c => c && c.week === 'Week 4').length }
             ].map(w => (
               <button
                 key={w.id}
@@ -966,88 +971,95 @@ export default function DailyReportView({
                     </td>
                   </tr>
                 ) : (
-                  filteredWeeklyContents.map((row) => (
-                    <tr key={row.id}>
-                      <td>
-                        <span style={{
-                          display: 'inline-block',
-                          padding: '0.25rem 0.6rem',
-                          borderRadius: '8px',
-                          fontSize: '0.78rem',
-                          fontWeight: 800,
-                          background: row.week === 'Week 1' ? 'rgba(56, 189, 248, 0.15)' :
-                                      row.week === 'Week 2' ? 'rgba(16, 185, 129, 0.15)' :
-                                      row.week === 'Week 3' ? 'rgba(250, 204, 21, 0.15)' : 'rgba(192, 132, 252, 0.15)',
-                          color: row.week === 'Week 1' ? '#38BDF8' :
-                                 row.week === 'Week 2' ? 'var(--emerald-main)' :
-                                 row.week === 'Week 3' ? '#FACC15' : '#C084FC',
-                          border: '1px solid currentColor'
-                        }}>
-                          {row.week}
-                        </span>
-                      </td>
-                      <td style={{ whiteSpace: 'nowrap', fontWeight: 600, fontSize: '0.82rem' }}>
-                        {row.date}
-                      </td>
-                      <td>
-                        <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
-                          {row.title}
-                        </div>
-                      </td>
-                      <td>
-                        <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
-                          {row.contentType}
-                        </div>
-                        <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                          {row.platform}
-                        </div>
-                      </td>
-                      <td>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                          <img 
-                            src={row.authorAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'} 
-                            alt={row.authorName} 
-                            style={{ width: '26px', height: '26px', borderRadius: '50%', objectFit: 'cover' }}
-                          />
-                          <div>
-                            <div style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)' }}>{row.authorName}</div>
-                            <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{row.authorRole}</div>
+                  filteredWeeklyContents.map((row) => {
+                    if (!row) return null;
+                    const fileName = typeof row.scriptFileName === 'string'
+                      ? row.scriptFileName
+                      : (row.scriptFileName?.name ? String(row.scriptFileName.name) : '');
+                    const hasScript = Boolean(fileName || (typeof row.scriptText === 'string' && row.scriptText.trim()));
+
+                    return (
+                      <tr key={row.id || Math.random()}>
+                        <td>
+                          <span style={{
+                            display: 'inline-block',
+                            padding: '0.25rem 0.6rem',
+                            borderRadius: '8px',
+                            fontSize: '0.78rem',
+                            fontWeight: 800,
+                            background: row.week === 'Week 1' ? 'rgba(56, 189, 248, 0.15)' :
+                                        row.week === 'Week 2' ? 'rgba(16, 185, 129, 0.15)' :
+                                        row.week === 'Week 3' ? 'rgba(250, 204, 21, 0.15)' : 'rgba(192, 132, 252, 0.15)',
+                            color: row.week === 'Week 1' ? '#38BDF8' :
+                                   row.week === 'Week 2' ? 'var(--emerald-main)' :
+                                   row.week === 'Week 3' ? '#FACC15' : '#C084FC',
+                            border: '1px solid currentColor'
+                          }}>
+                            {row.week || 'Week 1'}
+                          </span>
+                        </td>
+                        <td style={{ whiteSpace: 'nowrap', fontWeight: 600, fontSize: '0.82rem' }}>
+                          {row.date || '-'}
+                        </td>
+                        <td>
+                          <div style={{ fontWeight: 700, color: 'var(--text-primary)', fontSize: '0.9rem' }}>
+                            {typeof row.title === 'string' ? row.title : 'Content'}
                           </div>
-                        </div>
-                      </td>
-                      <td>
-                        <span className={`badge ${
-                          row.status === 'Published' || row.status === 'Ready to Launch' ? 'badge-scale' :
-                          row.status === 'In Production' ? 'badge-optimize' : 'badge-kill'
-                        }`} style={{ fontSize: '0.75rem' }}>
-                          {row.status}
-                        </span>
-                      </td>
-                      <td style={{ textAlign: 'center' }}>
-                        {row.scriptFileName || row.scriptText ? (
-                          <button
-                            type="button"
-                            onClick={() => setSelectedScriptContent(row)}
-                            className="btn btn-outline"
-                            style={{
-                              padding: '0.22rem 0.55rem',
-                              fontSize: '0.74rem',
-                              display: 'inline-flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              borderColor: 'rgba(16, 185, 129, 0.4)',
-                              color: 'var(--emerald-main)',
-                              background: 'rgba(16, 185, 129, 0.08)'
-                            }}
-                            title="មើល Script & Download File"
-                          >
-                            <FileText size={12} />
-                            <span>{row.scriptFileName ? (row.scriptFileName.length > 15 ? row.scriptFileName.slice(0, 13) + '...' : row.scriptFileName) : 'Script Text'}</span>
-                          </button>
-                        ) : (
-                          <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>-</span>
-                        )}
-                      </td>
+                        </td>
+                        <td>
+                          <div style={{ fontSize: '0.82rem', fontWeight: 600, color: 'var(--text-primary)' }}>
+                            {row.contentType || 'Short-form Video'}
+                          </div>
+                          <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
+                            {row.platform || 'TikTok'}
+                          </div>
+                        </td>
+                        <td>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <img 
+                              src={row.authorAvatar || 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150'} 
+                              alt={row.authorName || 'Staff'} 
+                              style={{ width: '26px', height: '26px', borderRadius: '50%', objectFit: 'cover' }}
+                            />
+                            <div>
+                              <div style={{ fontWeight: 700, fontSize: '0.82rem', color: 'var(--text-primary)' }}>{row.authorName || 'Staff'}</div>
+                              <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{row.authorRole || 'Digital Marketing'}</div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <span className={`badge ${
+                            row.status === 'Published' || row.status === 'Ready to Launch' ? 'badge-scale' :
+                            row.status === 'In Production' ? 'badge-optimize' : 'badge-kill'
+                          }`} style={{ fontSize: '0.75rem' }}>
+                            {row.status || 'Ready'}
+                          </span>
+                        </td>
+                        <td style={{ textAlign: 'center' }}>
+                          {hasScript ? (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedScriptContent(row)}
+                              className="btn btn-outline"
+                              style={{
+                                padding: '0.22rem 0.55rem',
+                                fontSize: '0.74rem',
+                                display: 'inline-flex',
+                                alignItems: 'center',
+                                gap: '4px',
+                                borderColor: 'rgba(16, 185, 129, 0.4)',
+                                color: 'var(--emerald-main)',
+                                background: 'rgba(16, 185, 129, 0.08)'
+                              }}
+                              title="មើល Script & Download File"
+                            >
+                              <FileText size={12} />
+                              <span>{fileName ? (fileName.length > 15 ? fileName.slice(0, 13) + '...' : fileName) : 'Script Text'}</span>
+                            </button>
+                          ) : (
+                            <span style={{ color: 'var(--text-muted)', fontSize: '0.72rem' }}>-</span>
+                          )}
+                        </td>
                       <td style={{ textAlign: 'center' }}>
                         <div style={{ display: 'flex', gap: '0.4rem', justifyContent: 'center' }}>
                           {row.driveLink ? (
@@ -1092,7 +1104,8 @@ export default function DailyReportView({
                         </button>
                       </td>
                     </tr>
-                  ))
+                    );
+                  })
                 )}
               </tbody>
             </table>
