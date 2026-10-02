@@ -205,6 +205,15 @@ export const dataService = {
     }
   },
 
+  async updateDailyReport(report) {
+    if (!isSupabaseConfigured) return;
+    try {
+      await supabase.from('daily_reports').update(mapDailyReportToDb(report)).eq('id', report.id);
+    } catch (err) {
+      console.error("Supabase updateDailyReport error:", err);
+    }
+  },
+
   // Editor Reports
   async insertEditorReport(report) {
     if (!isSupabaseConfigured) return;
@@ -212,6 +221,15 @@ export const dataService = {
       await supabase.from('editor_reports').insert(mapEditorReportToDb(report));
     } catch (err) {
       console.error("Supabase insertEditorReport error:", err);
+    }
+  },
+
+  async updateEditorReport(report) {
+    if (!isSupabaseConfigured) return;
+    try {
+      await supabase.from('editor_reports').update(mapEditorReportToDb(report)).eq('id', report.id);
+    } catch (err) {
+      console.error("Supabase updateEditorReport error:", err);
     }
   },
 
@@ -231,6 +249,15 @@ export const dataService = {
       await supabase.from('weekly_contents').insert(mapWeeklyContentToDb(content));
     } catch (err) {
       console.error("Supabase insertWeeklyContent error:", err);
+    }
+  },
+
+  async updateWeeklyContent(content) {
+    if (!isSupabaseConfigured) return;
+    try {
+      await supabase.from('weekly_contents').update(mapWeeklyContentToDb(content)).eq('id', content.id);
+    } catch (err) {
+      console.error("Supabase updateWeeklyContent error:", err);
     }
   },
 

@@ -554,41 +554,6 @@ export default function LoginModal({
               គណនី Staff ទាំងអស់ត្រូវបាន<strong>បង្កើត និងផ្តល់ជូនដោយ Boss ឬ Admin តែប៉ុណ្ណោះ</strong> ដើម្បីធានាសុវត្ថិភាពទិន្នន័យ។
             </div>
 
-            {/* Quick Demo Switcher */}
-            <div>
-              <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)', display: 'block', marginBottom: '0.4rem', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                ចូលសាកល្បងរហ័ស (Quick Demo Accounts):
-              </span>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '0.5rem' }}>
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  style={{ fontSize: '0.75rem', padding: '0.45rem 0.2rem', justifyContent: 'center', borderColor: 'rgba(234, 179, 8, 0.4)' }}
-                  onClick={() => handleQuickLogin('admin', '123')}
-                >
-                  <Crown size={13} color="#EAB308" />
-                  <span>Boss Admin</span>
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  style={{ fontSize: '0.75rem', padding: '0.45rem 0.2rem', justifyContent: 'center', borderColor: 'rgba(59, 130, 246, 0.4)' }}
-                  onClick={() => handleQuickLogin('marketing', '123')}
-                >
-                  <TrendingUp size={13} color="#3B82F6" />
-                  <span>Marketing</span>
-                </button>
-                <button
-                  type="button"
-                  className="btn btn-outline"
-                  style={{ fontSize: '0.75rem', padding: '0.45rem 0.2rem', justifyContent: 'center', borderColor: 'rgba(168, 85, 247, 0.4)' }}
-                  onClick={() => handleQuickLogin('editor', '123')}
-                >
-                  <Scissors size={13} color="#A855F7" />
-                  <span>Editor</span>
-                </button>
-              </div>
-            </div>
 
             {/* Action buttons */}
             <div style={{ display: 'flex', gap: '0.75rem', marginTop: '0.5rem' }}>

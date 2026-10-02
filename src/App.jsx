@@ -179,7 +179,20 @@ export default function App() {
   }, [editorReports]);
 
   useEffect(() => {
-    localStorage.setItem('suvee_weekly_contents', JSON.stringify(weeklyContents));
+    try {
+      localStorage.setItem('suvee_weekly_contents', JSON.stringify(weeklyContents));
+    } catch (e) {
+      console.warn("Storage quota exceeded, storing lightweight copy without huge dataUrls", e);
+      try {
+        const lightweight = weeklyContents.map(c => ({
+          ...c,
+          scriptFileUrl: c.scriptFileUrl?.length > 100000 ? '' : c.scriptFileUrl
+        }));
+        localStorage.setItem('suvee_weekly_contents', JSON.stringify(lightweight));
+      } catch (err2) {
+        console.error("Storage error:", err2);
+      }
+    }
   }, [weeklyContents]);
 
   // Overall Aggregated Stats
@@ -235,6 +248,21 @@ export default function App() {
       setEditorReports(prev => prev.filter(r => r.id !== id));
       dataService.deleteEditorReport(id);
     }
+  };
+
+  const handleUpdateDailyReport = (updatedReport) => {
+    setDailyReports(prev => prev.map(r => r.id === updatedReport.id ? updatedReport : r));
+    dataService.updateDailyReport(updatedReport);
+  };
+
+  const handleUpdateEditorReport = (updatedReport) => {
+    setEditorReports(prev => prev.map(r => r.id === updatedReport.id ? updatedReport : r));
+    dataService.updateEditorReport(updatedReport);
+  };
+
+  const handleUpdateWeeklyContent = (updatedContent) => {
+    setWeeklyContents(prev => prev.map(c => c.id === updatedContent.id ? updatedContent : c));
+    dataService.updateWeeklyContent(updatedContent);
   };
 
   const handleAddWeeklyContent = (newContent) => {
@@ -333,8 +361,11 @@ export default function App() {
         {activeTab === 'dashboard' && (
           <Dashboard 
             dailyReports={dailyReports}
+            onUpdateDailyReport={handleUpdateDailyReport}
             editorReports={editorReports}
+            onUpdateEditorReport={handleUpdateEditorReport}
             weeklyContents={weeklyContents}
+            onUpdateWeeklyContent={handleUpdateWeeklyContent}
             users={users}
             currentUser={currentUser}
             stats={stats}

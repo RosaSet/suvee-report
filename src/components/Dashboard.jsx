@@ -25,14 +25,21 @@ import {
   UserCheck,
   ShieldCheck,
   Layers,
-  FileText
+  FileText,
+  ThumbsUp,
+  AlertTriangle,
+  XOctagon
 } from 'lucide-react';
 import ScriptModal from './ScriptModal';
+import ReviewFeedbackModal from './ReviewFeedbackModal';
 
 export default function Dashboard({ 
   dailyReports = [], 
+  onUpdateDailyReport,
   editorReports = [],
+  onUpdateEditorReport,
   weeklyContents = [],
+  onUpdateWeeklyContent,
   users = [],
   currentUser,
   stats, 
@@ -49,8 +56,81 @@ export default function Dashboard({
   const [weekFilter, setWeekFilter] = useState('All');
   const [selectedScriptContent, setSelectedScriptContent] = useState(null);
 
+  // Boss Review & Rejection Modal State
+  const [reviewModalReport, setReviewModalReport] = useState(null);
+  const [feedbackSuccessToast, setFeedbackSuccessToast] = useState('');
+
   // Staff Feed Filter
   const [feedFilter, setFeedFilter] = useState('all');
+
+  const handleApproveReport = (reportId, reportType) => {
+    if (reportType === 'editor') {
+      const target = editorReports.find(r => r.id === reportId);
+      if (target && onUpdateEditorReport) {
+        onUpdateEditorReport({
+          ...target,
+          status: 'Ready to Launch',
+          adminFeedback: ''
+        });
+      }
+    } else if (reportType === 'content') {
+      const target = weeklyContents.find(c => c.id === reportId);
+      if (target && onUpdateWeeklyContent) {
+        onUpdateWeeklyContent({
+          ...target,
+          status: 'Ready to Launch',
+          adminFeedback: ''
+        });
+      }
+    } else if (reportType === 'boost') {
+      const target = dailyReports.find(r => r.id === reportId);
+      if (target && onUpdateDailyReport) {
+        onUpdateDailyReport({
+          ...target,
+          status: 'Scale',
+          adminFeedback: ''
+        });
+      }
+    }
+    setFeedbackSuccessToast('បានអនុម័តរបាយការណ៍ជោគជ័យ! ✅');
+    setTimeout(() => setFeedbackSuccessToast(''), 3000);
+  };
+
+  const handleSubmitFeedback = ({ reportId, reportType, status, adminFeedback }) => {
+    if (reportType === 'editor') {
+      const target = editorReports.find(r => r.id === reportId);
+      if (target && onUpdateEditorReport) {
+        onUpdateEditorReport({
+          ...target,
+          status: 'Needs Revision',
+          adminFeedback: adminFeedback,
+          notes: target.notes ? `${target.notes} | [Boss Feedback]: ${adminFeedback}` : `[Boss Feedback]: ${adminFeedback}`
+        });
+      }
+    } else if (reportType === 'content') {
+      const target = weeklyContents.find(c => c.id === reportId);
+      if (target && onUpdateWeeklyContent) {
+        onUpdateWeeklyContent({
+          ...target,
+          status: 'Needs Revision',
+          adminFeedback: adminFeedback,
+          notes: target.notes ? `${target.notes} | [Boss Feedback]: ${adminFeedback}` : `[Boss Feedback]: ${adminFeedback}`
+        });
+      }
+    } else if (reportType === 'boost') {
+      const target = dailyReports.find(r => r.id === reportId);
+      if (target && onUpdateDailyReport) {
+        onUpdateDailyReport({
+          ...target,
+          status: 'Needs Revision',
+          adminFeedback: adminFeedback,
+          notes: target.notes ? `${target.notes} | [Boss Feedback]: ${adminFeedback}` : `[Boss Feedback]: ${adminFeedback}`
+        });
+      }
+    }
+    setFeedbackSuccessToast('បានបញ្ជូនការសុំកែសម្រួលទៅកាន់បុគ្គលិកជោគជ័យ! 📩');
+    setTimeout(() => setFeedbackSuccessToast(''), 3000);
+  };
 
   // =========================================================
   // DEPARTMENT 1: DIGITAL MARKETING STATS & AUTHORS
@@ -547,13 +627,18 @@ export default function Dashboard({
                     <th style={{ textAlign: 'center' }}>ROAS</th>
                     <th style={{ textAlign: 'center' }}>Link Boost</th>
                     <th style={{ textAlign: 'center' }}>Status SOP</th>
+                    {isAdmin && <th style={{ textAlign: 'center' }}>ការអនុម័ត (Boss Actions)</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {filteredBoostReports.length === 0 ? (
                     <tr>
-                      <td colSpan="10" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                        មិនមានទិន្នន័យ Digital Marketing ត្រូវនឹងការស្វែងរកឡើយ
+                      <td colSpan={isAdmin ? "11" : "10"} style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-muted)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
+                          <span style={{ fontSize: '1.6rem' }}>📊</span>
+                          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>មិនទាន់មានទិន្នន័យ Digital Marketing Report នៅឡើយទេ</span>
+                          <span style={{ fontSize: '0.78rem' }}>រង់ចាំ Staff ផ្នែក Marketing បញ្ចូលទិន្នន័យ Boost</span>
+                        </div>
                       </td>
                     </tr>
                   ) : (
@@ -619,10 +704,77 @@ export default function Dashboard({
                           )}
                         </td>
                         <td style={{ textAlign: 'center' }}>
-                          <span className={`badge ${row.status === 'Scale' ? 'badge-scale' : row.status === 'Optimize' ? 'badge-optimize' : 'badge-kill'}`}>
-                            {row.status}
-                          </span>
+                          {row.status === 'Needs Revision' ? (
+                            <div>
+                              <span className="badge" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                                ⚠️ ត្រូវកែសម្រួល
+                              </span>
+                              {row.adminFeedback && (
+                                <div style={{ fontSize: '0.72rem', color: '#EF4444', marginTop: '2px', fontWeight: 600 }}>
+                                  💬 {row.adminFeedback}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className={`badge ${row.status === 'Scale' ? 'badge-scale' : row.status === 'Optimize' ? 'badge-optimize' : 'badge-kill'}`}>
+                              {row.status}
+                            </span>
+                          )}
                         </td>
+                        {isAdmin && (
+                          <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+                            <div style={{ display: 'inline-flex', gap: '4px' }}>
+                              <button
+                                type="button"
+                                onClick={() => handleApproveReport(row.id, 'boost')}
+                                title="អនុម័ត (Approve)"
+                                style={{
+                                  padding: '0.22rem 0.5rem',
+                                  borderRadius: '6px',
+                                  fontSize: '0.74rem',
+                                  fontWeight: 700,
+                                  background: 'rgba(16, 185, 129, 0.15)',
+                                  color: 'var(--emerald-main)',
+                                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '2px'
+                                }}
+                              >
+                                <CheckCircle2 size={13} />
+                                <span>Approve</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setReviewModalReport({
+                                  id: row.id,
+                                  type: 'boost',
+                                  title: row.campaignName,
+                                  authorName: row.authorName,
+                                  date: row.date
+                                })}
+                                title="សុំឱ្យកែសម្រួល (Reject / Request Revision)"
+                                style={{
+                                  padding: '0.22rem 0.5rem',
+                                  borderRadius: '6px',
+                                  fontSize: '0.74rem',
+                                  fontWeight: 700,
+                                  background: 'rgba(239, 68, 68, 0.12)',
+                                  color: '#EF4444',
+                                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '2px'
+                                }}
+                              >
+                                <AlertTriangle size={13} />
+                                <span>Reject (សុំកែ)</span>
+                              </button>
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     ))
                   )}
@@ -646,13 +798,18 @@ export default function Dashboard({
                     <th>ស្ថានភាព</th>
                     <th style={{ textAlign: 'center' }}>Drive Link</th>
                     <th>សម្គាល់ (Notes)</th>
+                    {isAdmin && <th style={{ textAlign: 'center' }}>ការអនុម័ត (Boss Actions)</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {filteredEditorReports.length === 0 ? (
                     <tr>
-                      <td colSpan="9" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                        មិនមានទិន្នន័យ Video Editor ត្រូវនឹងការស្វែងរកឡើយ
+                      <td colSpan={isAdmin ? "10" : "9"} style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-muted)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
+                          <span style={{ fontSize: '1.6rem' }}>✂️</span>
+                          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>មិនទាន់មានទិន្នន័យ Video Editor នៅឡើយទេ</span>
+                          <span style={{ fontSize: '0.78rem' }}>រង់ចាំ Editor បញ្ចូលរបាយការណ៍កាត់តវីដេអូ</span>
+                        </div>
                       </td>
                     </tr>
                   ) : (
@@ -708,9 +865,22 @@ export default function Dashboard({
                           </span>
                         </td>
                         <td>
-                          <span className={`badge ${row.status === 'Ready to Launch' ? 'badge-scale' : 'badge-optimize'}`}>
-                            {row.status}
-                          </span>
+                          {row.status === 'Needs Revision' ? (
+                            <div>
+                              <span className="badge" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                                ⚠️ ត្រូវកែសម្រួល
+                              </span>
+                              {row.adminFeedback && (
+                                <div style={{ fontSize: '0.72rem', color: '#EF4444', marginTop: '2px', fontWeight: 600 }}>
+                                  💬 {row.adminFeedback}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className={`badge ${row.status === 'Ready to Launch' ? 'badge-scale' : 'badge-optimize'}`}>
+                              {row.status}
+                            </span>
+                          )}
                         </td>
                         <td style={{ textAlign: 'center' }}>
                           {row.driveLink ? (
@@ -730,6 +900,60 @@ export default function Dashboard({
                         <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', maxWidth: '200px' }}>
                           {row.notes || '-'}
                         </td>
+                        {isAdmin && (
+                          <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+                            <div style={{ display: 'inline-flex', gap: '4px' }}>
+                              <button
+                                type="button"
+                                onClick={() => handleApproveReport(row.id, 'editor')}
+                                title="អនុម័ត (Approve)"
+                                style={{
+                                  padding: '0.22rem 0.5rem',
+                                  borderRadius: '6px',
+                                  fontSize: '0.74rem',
+                                  fontWeight: 700,
+                                  background: 'rgba(16, 185, 129, 0.15)',
+                                  color: 'var(--emerald-main)',
+                                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '2px'
+                                }}
+                              >
+                                <CheckCircle2 size={13} />
+                                <span>Approve</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setReviewModalReport({
+                                  id: row.id,
+                                  type: 'editor',
+                                  title: row.videoTitle,
+                                  authorName: row.authorName || row.editorName,
+                                  date: row.date
+                                })}
+                                title="សុំឱ្យកែសម្រួល (Reject / Request Revision)"
+                                style={{
+                                  padding: '0.22rem 0.5rem',
+                                  borderRadius: '6px',
+                                  fontSize: '0.74rem',
+                                  fontWeight: 700,
+                                  background: 'rgba(239, 68, 68, 0.12)',
+                                  color: '#EF4444',
+                                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '2px'
+                                }}
+                              >
+                                <AlertTriangle size={13} />
+                                <span>Reject (សុំកែ)</span>
+                              </button>
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     ))
                   )}
@@ -753,13 +977,18 @@ export default function Dashboard({
                     <th style={{ textAlign: 'center' }}>ឯកសារ Script (PC)</th>
                     <th style={{ textAlign: 'center' }}>Drive & Post Link</th>
                     <th>សម្គាល់ (Notes)</th>
+                    {isAdmin && <th style={{ textAlign: 'center' }}>ការអនុម័ត (Boss Actions)</th>}
                   </tr>
                 </thead>
                 <tbody>
                   {filteredWeeklyContents.length === 0 ? (
                     <tr>
-                      <td colSpan="9" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
-                        មិនមានទិន្នន័យ Content ត្រូវនឹងការស្វែងរកឡើយ
+                      <td colSpan={isAdmin ? "10" : "9"} style={{ textAlign: 'center', padding: '2.5rem 1rem', color: 'var(--text-muted)' }}>
+                        <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '0.4rem' }}>
+                          <span style={{ fontSize: '1.6rem' }}>📅</span>
+                          <span style={{ fontWeight: 700, color: 'var(--text-primary)' }}>មិនទាន់មានទិន្នន័យ Weekly Content នៅឡើយទេ</span>
+                          <span style={{ fontSize: '0.78rem' }}>រង់ចាំ Staff បញ្ចូលមាតិកា Content ប្រចាំសប្តាហ៍</span>
+                        </div>
                       </td>
                     </tr>
                   ) : (
@@ -809,9 +1038,22 @@ export default function Dashboard({
                           <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>{row.platform}</div>
                         </td>
                         <td>
-                          <span className={`badge ${row.status === 'Published' || row.status === 'Ready to Launch' ? 'badge-scale' : 'badge-optimize'}`}>
-                            {row.status}
-                          </span>
+                          {row.status === 'Needs Revision' ? (
+                            <div>
+                              <span className="badge" style={{ background: 'rgba(239, 68, 68, 0.15)', color: '#EF4444', border: '1px solid rgba(239, 68, 68, 0.3)' }}>
+                                ⚠️ ត្រូវកែសម្រួល
+                              </span>
+                              {row.adminFeedback && (
+                                <div style={{ fontSize: '0.72rem', color: '#EF4444', marginTop: '2px', fontWeight: 600 }}>
+                                  💬 {row.adminFeedback}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span className={`badge ${row.status === 'Published' || row.status === 'Ready to Launch' ? 'badge-scale' : 'badge-optimize'}`}>
+                              {row.status}
+                            </span>
+                          )}
                         </td>
                         <td style={{ textAlign: 'center' }}>
                           {row.scriptFileName || row.scriptText ? (
@@ -867,6 +1109,60 @@ export default function Dashboard({
                         <td style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', maxWidth: '180px' }}>
                           {row.notes || '-'}
                         </td>
+                        {isAdmin && (
+                          <td style={{ textAlign: 'center', whiteSpace: 'nowrap' }}>
+                            <div style={{ display: 'inline-flex', gap: '4px' }}>
+                              <button
+                                type="button"
+                                onClick={() => handleApproveReport(row.id, 'content')}
+                                title="អនុម័ត (Approve)"
+                                style={{
+                                  padding: '0.22rem 0.5rem',
+                                  borderRadius: '6px',
+                                  fontSize: '0.74rem',
+                                  fontWeight: 700,
+                                  background: 'rgba(16, 185, 129, 0.15)',
+                                  color: 'var(--emerald-main)',
+                                  border: '1px solid rgba(16, 185, 129, 0.4)',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '2px'
+                                }}
+                              >
+                                <CheckCircle2 size={13} />
+                                <span>Approve</span>
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => setReviewModalReport({
+                                  id: row.id,
+                                  type: 'content',
+                                  title: row.title,
+                                  authorName: row.authorName,
+                                  date: row.date
+                                })}
+                                title="សុំឱ្យកែសម្រួល (Reject / Request Revision)"
+                                style={{
+                                  padding: '0.22rem 0.5rem',
+                                  borderRadius: '6px',
+                                  fontSize: '0.74rem',
+                                  fontWeight: 700,
+                                  background: 'rgba(239, 68, 68, 0.12)',
+                                  color: '#EF4444',
+                                  border: '1px solid rgba(239, 68, 68, 0.35)',
+                                  cursor: 'pointer',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '2px'
+                                }}
+                              >
+                                <AlertTriangle size={13} />
+                                <span>Reject (សុំកែ)</span>
+                              </button>
+                            </div>
+                          </td>
+                        )}
                       </tr>
                     ))
                   )}
@@ -1256,7 +1552,9 @@ export default function Dashboard({
                         </div>
                         <div>
                           <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>ស្ថានភាព</div>
-                          <div style={{ fontWeight: 700, color: 'var(--emerald-main)', fontSize: '0.82rem' }}>{item.status}</div>
+                          <div style={{ fontWeight: 700, color: item.status === 'Needs Revision' ? '#EF4444' : 'var(--emerald-main)', fontSize: '0.82rem' }}>
+                            {item.status === 'Needs Revision' ? '⚠️ ត្រូវកែសម្រួល' : item.status}
+                          </div>
                         </div>
                       </>
                     ) : (
@@ -1271,46 +1569,116 @@ export default function Dashboard({
                         </div>
                         <div>
                           <div style={{ fontSize: '0.7rem', color: 'var(--text-muted)' }}>ស្ថានភាព</div>
-                          <div style={{ fontWeight: 700, color: 'var(--emerald-main)', fontSize: '0.82rem' }}>{item.status || 'Ready to Launch'}</div>
+                          <div style={{ fontWeight: 700, color: item.status === 'Needs Revision' ? '#EF4444' : 'var(--emerald-main)', fontSize: '0.82rem' }}>
+                            {item.status === 'Needs Revision' ? '⚠️ ត្រូវកែសម្រួល' : (item.status || 'Ready to Launch')}
+                          </div>
                         </div>
                       </>
                     )}
                   </div>
 
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'flex-end' }}>
-                    {isContent && (item.scriptFileName || item.scriptText) && (
-                      <button
-                        type="button"
-                        onClick={() => setSelectedScriptContent(item)}
-                        className="btn btn-outline"
-                        style={{
-                          fontSize: '0.74rem',
-                          padding: '0.3rem 0.65rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.35rem',
-                          borderColor: 'rgba(16, 185, 129, 0.4)',
-                          color: 'var(--emerald-main)',
-                          background: 'rgba(16, 185, 129, 0.08)'
-                        }}
-                        title="មើល Script & Download"
-                      >
-                        <FileText size={12} />
-                        <span>{item.scriptFileName ? (item.scriptFileName.length > 14 ? item.scriptFileName.slice(0, 12) + '...' : item.scriptFileName) : 'Script (PC)'}</span>
-                      </button>
+                  {item.status === 'Needs Revision' && item.adminFeedback && (
+                    <div style={{
+                      marginTop: '0.5rem',
+                      padding: '0.4rem 0.65rem',
+                      borderRadius: '6px',
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid rgba(239, 68, 68, 0.3)',
+                      color: '#EF4444',
+                      fontSize: '0.75rem',
+                      fontWeight: 600
+                    }}>
+                      💬 <strong>Boss Feedback:</strong> {item.adminFeedback}
+                    </div>
+                  )}
+
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem', alignItems: 'flex-end', marginTop: '0.5rem' }}>
+                    {isAdmin && (
+                      <div style={{ display: 'flex', gap: '4px' }}>
+                        <button
+                          type="button"
+                          onClick={() => handleApproveReport(item.id, isContent ? 'content' : isBoost ? 'boost' : 'editor')}
+                          style={{
+                            padding: '0.2rem 0.5rem',
+                            fontSize: '0.72rem',
+                            borderRadius: '6px',
+                            fontWeight: 700,
+                            background: 'rgba(16, 185, 129, 0.15)',
+                            color: 'var(--emerald-main)',
+                            border: '1px solid rgba(16, 185, 129, 0.4)',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '2px'
+                          }}
+                        >
+                          <CheckCircle2 size={12} />
+                          <span>Approve</span>
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => setReviewModalReport({
+                            id: item.id,
+                            type: isContent ? 'content' : isBoost ? 'boost' : 'editor',
+                            title: item.title || item.campaignName || item.videoTitle,
+                            authorName: item.authorName || item.editorName,
+                            date: item.date
+                          })}
+                          style={{
+                            padding: '0.2rem 0.5rem',
+                            fontSize: '0.72rem',
+                            borderRadius: '6px',
+                            fontWeight: 700,
+                            background: 'rgba(239, 68, 68, 0.12)',
+                            color: '#EF4444',
+                            border: '1px solid rgba(239, 68, 68, 0.35)',
+                            cursor: 'pointer',
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '2px'
+                          }}
+                        >
+                          <AlertTriangle size={12} />
+                          <span>Reject (សុំកែ)</span>
+                        </button>
+                      </div>
                     )}
-                    {(item.boostLink || item.driveLink) && (
-                      <a 
-                        href={item.boostLink || item.driveLink}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn btn-outline"
-                        style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
-                      >
-                        <ExternalLink size={13} />
-                        <span>{isContent ? 'Link Content' : isBoost ? 'Link Boost' : 'Drive វីដេអូ'}</span>
-                      </a>
-                    )}
+
+                    <div style={{ display: 'flex', gap: '0.4rem', alignItems: 'center' }}>
+                      {isContent && (item.scriptFileName || item.scriptText) && (
+                        <button
+                          type="button"
+                          onClick={() => setSelectedScriptContent(item)}
+                          className="btn btn-outline"
+                          style={{
+                            fontSize: '0.74rem',
+                            padding: '0.3rem 0.65rem',
+                            display: 'flex',
+                            alignItems: 'center',
+                            gap: '0.35rem',
+                            borderColor: 'rgba(16, 185, 129, 0.4)',
+                            color: 'var(--emerald-main)',
+                            background: 'rgba(16, 185, 129, 0.08)'
+                          }}
+                          title="មើល Script & Download"
+                        >
+                          <FileText size={12} />
+                          <span>{item.scriptFileName ? (item.scriptFileName.length > 14 ? item.scriptFileName.slice(0, 12) + '...' : item.scriptFileName) : 'Script (PC)'}</span>
+                        </button>
+                      )}
+                      {(item.boostLink || item.driveLink) && (
+                        <a 
+                          href={item.boostLink || item.driveLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="btn btn-outline"
+                          style={{ fontSize: '0.75rem', padding: '0.35rem 0.75rem', display: 'flex', alignItems: 'center', gap: '0.4rem' }}
+                        >
+                          <ExternalLink size={13} />
+                          <span>{isContent ? 'Link Content' : isBoost ? 'Link Boost' : 'Drive វីដេអូ'}</span>
+                        </a>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
@@ -1325,6 +1693,39 @@ export default function Dashboard({
         onClose={() => setSelectedScriptContent(null)}
         content={selectedScriptContent}
       />
+
+      {/* REVIEW & FEEDBACK MODAL (BOSS REJECT / APPROVE) */}
+      <ReviewFeedbackModal
+        isOpen={!!reviewModalReport}
+        onClose={() => setReviewModalReport(null)}
+        report={reviewModalReport}
+        onSubmitFeedback={handleSubmitFeedback}
+        onApproveReport={handleApproveReport}
+      />
+
+      {/* TOAST NOTIFICATION */}
+      {feedbackSuccessToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          background: 'rgba(15, 23, 42, 0.95)',
+          color: '#10B981',
+          border: '1px solid #10B981',
+          padding: '0.85rem 1.25rem',
+          borderRadius: '10px',
+          fontSize: '0.88rem',
+          fontWeight: 700,
+          boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          backdropFilter: 'blur(8px)'
+        }}>
+          {feedbackSuccessToast}
+        </div>
+      )}
 
     </div>
   );

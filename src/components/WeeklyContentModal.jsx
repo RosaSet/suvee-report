@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import { 
   Calendar, 
   FileText, 
@@ -13,7 +13,8 @@ import {
   Share2,
   UploadCloud,
   FileCheck,
-  Trash2
+  Trash2,
+  FolderOpen
 } from 'lucide-react';
 
 export default function WeeklyContentModal({ 
@@ -39,48 +40,79 @@ export default function WeeklyContentModal({
   // PC Script File Upload State
   const [scriptFile, setScriptFile] = useState(null); // { name, size, dataUrl, textContent }
   const [scriptText, setScriptText] = useState('');
+  const fileInputRef = useRef(null);
 
   if (!isOpen) return null;
 
   const handleScriptFileChange = (e) => {
-    const file = e.target.files?.[0];
+    const file = e.target?.files?.[0];
     if (!file) return;
 
     const fileSizeKB = (file.size / 1024).toFixed(1);
     const sizeStr = file.size > 1024 * 1024 ? `${(file.size / (1024 * 1024)).toFixed(2)} MB` : `${fileSizeKB} KB`;
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-      const dataUrl = event.target.result;
-      
-      // If text/markdown file, also read text content
-      if (file.type.includes('text') || file.name.endsWith('.txt') || file.name.endsWith('.md')) {
-        const textReader = new FileReader();
-        textReader.onload = (tEvent) => {
-          const text = tEvent.target.result;
-          setScriptFile({
-            name: file.name,
-            size: sizeStr,
-            type: file.type || 'text/plain',
-            dataUrl: dataUrl,
-            textContent: text
-          });
-          if (!scriptText.trim()) {
-            setScriptText(text);
-          }
-        };
-        textReader.readAsText(file);
-      } else {
+    // If text/markdown file, also read text content
+    const isTextFile = file.type?.includes('text') || 
+      file.name.endsWith('.txt') || 
+      file.name.endsWith('.md') || 
+      file.name.endsWith('.json') ||
+      file.name.endsWith('.csv');
+
+    if (isTextFile) {
+      const textReader = new FileReader();
+      textReader.onload = (tEvent) => {
+        const text = tEvent.target.result;
         setScriptFile({
           name: file.name,
           size: sizeStr,
-          type: file.type,
-          dataUrl: dataUrl,
-          textContent: ''
+          type: file.type || 'text/plain',
+          dataUrl: text.length < 500000 ? `data:text/plain;charset=utf-8,${encodeURIComponent(text)}` : '',
+          textContent: text
+        });
+        if (!scriptText.trim()) {
+          setScriptText(text);
+        }
+      };
+      textReader.readAsText(file);
+    } else {
+      // For images or documents under 2MB, store dataUrl safely
+      if (file.size <= 2 * 1024 * 1024) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          setScriptFile({
+            name: file.name,
+            size: sizeStr,
+            type: file.type || 'application/octet-stream',
+            dataUrl: event.target.result,
+            textContent: ''
+          });
+        };
+        reader.onerror = () => {
+          console.warn("Could not read full dataUrl, saving file metadata only");
+          setScriptFile({
+            name: file.name,
+            size: sizeStr,
+            type: file.type || 'application/octet-stream',
+            dataUrl: '',
+            textContent: ''
+          });
+        };
+        reader.readAsDataURL(file);
+      } else {
+        // Larger file (e.g., video or huge doc): store metadata safely without blowing browser storage
+        setScriptFile({
+          name: file.name,
+          size: sizeStr,
+          type: file.type || 'application/octet-stream',
+          dataUrl: '',
+          textContent: `[File ភ្ជាប់ពី PC]: ${file.name} (${sizeStr})`
         });
       }
-    };
-    reader.readAsDataURL(file);
+    }
+
+    if (e.target && 'value' in e.target) {
+      e.target.value = ''; // Reset input to allow re-selection
+    }
   };
 
   const handleRemoveScriptFile = () => {
@@ -318,37 +350,38 @@ export default function WeeklyContentModal({
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.65rem' }}>
               <label className="form-label" style={{ margin: 0, fontWeight: 700, display: 'flex', alignItems: 'center', gap: '0.4rem', color: 'var(--text-primary)' }}>
                 <FileText size={16} color="var(--emerald-main)" />
-                <span>Upload Script ពីកុំព្យូទ័រ (Script File from PC)</span>
+                <span>Upload Script / ឯកសារពីកុំព្យូទ័រ (File from PC)</span>
               </label>
               <span style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>
-                .txt, .docx, .doc, .pdf, .md
+                .docx, .pdf, .txt, .mp4, .png...
               </span>
             </div>
 
-            {/* Hidden native file input */}
+            {/* Hidden native file input with id and ref */}
             <input 
+              id="pc-script-file-input"
               type="file" 
-              id="script-file-upload-input"
+              ref={fileInputRef}
               style={{ display: 'none' }}
-              accept=".txt,.doc,.docx,.pdf,.md,.rtf"
               onChange={handleScriptFileChange}
             />
 
             {!scriptFile ? (
               <label 
-                htmlFor="script-file-upload-input"
+                htmlFor="pc-script-file-input"
                 style={{
                   display: 'flex',
                   flexDirection: 'column',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  padding: '1.2rem 1rem',
-                  border: '2px dashed rgba(16, 185, 129, 0.35)',
+                  padding: '1.25rem 1rem',
+                  border: '2px dashed rgba(16, 185, 129, 0.45)',
                   borderRadius: '10px',
-                  background: 'rgba(16, 185, 129, 0.03)',
+                  background: 'rgba(16, 185, 129, 0.05)',
                   cursor: 'pointer',
                   transition: 'all 0.2s ease',
-                  textAlign: 'center'
+                  textAlign: 'center',
+                  userSelect: 'none'
                 }}
                 onDragOver={(e) => { e.preventDefault(); }}
                 onDrop={(e) => {
@@ -359,23 +392,40 @@ export default function WeeklyContentModal({
                 }}
               >
                 <div style={{
-                  width: '38px',
-                  height: '38px',
+                  width: '42px',
+                  height: '42px',
                   borderRadius: '50%',
-                  background: 'rgba(16, 185, 129, 0.12)',
+                  background: 'rgba(16, 185, 129, 0.15)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  marginBottom: '0.45rem',
+                  marginBottom: '0.5rem',
                   color: 'var(--emerald-main)'
                 }}>
-                  <UploadCloud size={20} />
+                  <UploadCloud size={22} />
                 </div>
-                <div style={{ fontWeight: 700, fontSize: '0.88rem', color: 'var(--text-primary)' }}>
-                  ចុចទីនេះដើម្បីជ្រើសរើស File Script ពីកុំព្យូទ័រ (Browse PC File)
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', color: 'var(--text-primary)', marginBottom: '0.2rem' }}>
+                  ចុចទីនេះដើម្បីជ្រើសរើស File ពីកុំព្យូទ័រ ឬទូរស័ព្ទ (Browse PC File)
                 </div>
-                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                  ទម្លាក់ File ឬ Click ភ្ជាប់ឯកសារ Script (Word .docx, PDF, Text .txt)
+                <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginBottom: '0.65rem' }}>
+                  ទម្លាក់ File ឬ Click ភ្ជាប់ឯកសារ Script (Word .docx, PDF, Text .txt, Images...)
+                </div>
+                <div
+                  style={{
+                    fontSize: '0.78rem',
+                    padding: '0.45rem 1rem',
+                    background: 'var(--emerald-main)',
+                    color: '#0F172A',
+                    fontWeight: 700,
+                    border: 'none',
+                    borderRadius: '6px',
+                    display: 'inline-flex',
+                    alignItems: 'center',
+                    gap: '6px'
+                  }}
+                >
+                  <FolderOpen size={15} />
+                  <span>📂 ជ្រើសរើស File ពី PC</span>
                 </div>
               </label>
             ) : (

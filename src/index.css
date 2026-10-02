@@ -952,3 +952,127 @@ body[data-theme="light"] {
   to { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+/* =========================================================
+   Mobile Phone Responsiveness (iOS & Android Smartphones)
+   ========================================================= */
+
+@media (max-width: 768px) {
+  .header-inner {
+    padding: 0.65rem 0.85rem !important;
+    gap: 0.75rem !important;
+    justify-content: space-between !important;
+  }
+
+  .brand-wrapper img {
+    width: 30px !important;
+    height: 30px !important;
+  }
+
+  .brand-wrapper span:first-of-type {
+    font-size: 0.95rem !important;
+  }
+
+  .brand-wrapper span:last-of-type {
+    font-size: 0.65rem !important;
+  }
+
+  /* Make header nav tabs flex-wrap or full-width */
+  .site-header nav {
+    width: 100% !important;
+    order: 3;
+    justify-content: center;
+    margin-top: 0.35rem;
+  }
+
+  .nav-tab-btn {
+    flex: 1;
+    justify-content: center;
+    padding: 0.45rem 0.5rem !important;
+    font-size: 0.78rem !important;
+  }
+
+  /* Right header actions container */
+  .header-inner > div:last-child {
+    gap: 0.4rem !important;
+    order: 2;
+  }
+
+  /* Main container */
+  .main-content, .container, main {
+    padding: 0.75rem !important;
+  }
+
+  /* Table responsive touch scroll */
+  .table-responsive {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    border-radius: 10px;
+    margin: 0 -0.5rem;
+    padding: 0 0.5rem;
+  }
+
+  .data-table {
+    min-width: 650px;
+  }
+
+  .data-table th, .data-table td {
+    padding: 0.65rem 0.5rem !important;
+    font-size: 0.78rem !important;
+  }
+
+  /* Modals on Mobile */
+  .modal-overlay, .modal-backdrop {
+    padding: 0.5rem !important;
+    align-items: flex-end !important; /* Bottom-sheet feel on mobile */
+  }
+
+  .modal-box {
+    max-height: 92vh !important;
+    padding: 1.25rem 1rem !important;
+    border-radius: 20px 20px 0 0 !important;
+    width: 100% !important;
+  }
+
+  .modal-header {
+    margin-bottom: 1rem !important;
+    padding-bottom: 0.75rem !important;
+  }
+
+  .modal-header h3 {
+    font-size: 1.1rem !important;
+  }
+
+  /* Forms on Mobile */
+  .form-grid {
+    grid-template-columns: 1fr !important;
+    gap: 0.85rem !important;
+  }
+
+  /* Quick metrics cards */
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 0.65rem !important;
+  }
+
+  /* Buttons on mobile */
+  .btn {
+    padding: 0.5rem 0.85rem;
+    font-size: 0.82rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .header-inner {
+    padding: 0.5rem !important;
+  }
+  
+  .modal-box {
+    padding: 1rem 0.75rem !important;
+  }
+}
+
+
