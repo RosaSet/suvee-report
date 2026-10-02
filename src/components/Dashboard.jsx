@@ -38,7 +38,8 @@ export default function Dashboard({
   stats, 
   onNavigateToReport,
   onOpenAddStaff,
-  onResetDemoData 
+  onResetDemoData,
+  onClearAllData 
 }) {
   const isAdmin = currentUser?.role === 'Admin';
 
@@ -67,7 +68,7 @@ export default function Dashboard({
   const ttLeads = ttReports.reduce((sum, r) => sum + Number(r.leads || 0), 0);
   const ttROAS = ttSpend > 0 ? (ttRevenue / ttSpend).toFixed(2) : '0.00';
 
-  const marketingAuthors = Array.from(new Set(dailyReports.map(r => r.authorName || 'Vannak Meas')));
+  const marketingAuthors = Array.from(new Set(dailyReports.map(r => r.authorName).filter(Boolean)));
 
   // =========================================================
   // DEPARTMENT 2: VIDEO EDITOR STATS & AUTHORS
@@ -77,7 +78,7 @@ export default function Dashboard({
   const avgHooksPerVideo = totalVideos > 0 ? (totalHooks / totalVideos).toFixed(1) : '0.0';
   const readyVideosCount = editorReports.filter(r => r.status === 'Ready to Launch').length;
 
-  const editorAuthors = Array.from(new Set(editorReports.map(e => e.authorName || e.editorName || 'Sokha Heng')));
+  const editorAuthors = Array.from(new Set(editorReports.map(e => e.authorName || e.editorName).filter(Boolean)));
 
   // =========================================================
   // DEPARTMENT 3: WEEKLY CONTENT STATS & AUTHORS
@@ -86,7 +87,7 @@ export default function Dashboard({
   const w2Count = weeklyContents.filter(c => c.week === 'Week 2').length;
   const w3Count = weeklyContents.filter(c => c.week === 'Week 3').length;
   const w4Count = weeklyContents.filter(c => c.week === 'Week 4').length;
-  const contentAuthors = Array.from(new Set(weeklyContents.map(c => c.authorName || 'Staff Member')));
+  const contentAuthors = Array.from(new Set(weeklyContents.map(c => c.authorName).filter(Boolean)));
 
   // Filtered detailed reports for Admin
   const filteredBoostReports = dailyReports.filter(r => {
@@ -194,16 +195,16 @@ export default function Dashboard({
           </div>
 
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
-            {onResetDemoData && (
+            {onClearAllData && (
               <button 
                 type="button"
                 className="btn btn-outline" 
-                onClick={onResetDemoData}
-                title="ផ្ទុកទិន្នន័យគំរូឡើងវិញ (Reload Demo Data)"
-                style={{ fontSize: '0.82rem', padding: '0.45rem 0.85rem' }}
+                onClick={onClearAllData}
+                title="សម្អាតទិន្នន័យរបាយការណ៍ទាំងអស់ឱ្យទៅជាទទេ (Wipe to Empty)"
+                style={{ fontSize: '0.82rem', padding: '0.45rem 0.85rem', color: '#F87171', borderColor: 'rgba(239, 68, 68, 0.35)' }}
               >
                 <RotateCcw size={14} />
-                <span>ផ្ទុកទិន្នន័យគំរូ</span>
+                <span>សម្អាតទិន្នន័យ (Clear All)</span>
               </button>
             )}
 
@@ -283,11 +284,15 @@ export default function Dashboard({
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', background: 'var(--dark-inset)', border: '1px solid var(--border-color)', padding: '0.45rem 0.75rem', borderRadius: '8px' }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>បុគ្គលិកបាន Upload:</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
-                {marketingAuthors.map((author, idx) => (
-                  <span key={idx} style={{ fontSize: '0.78rem', fontWeight: 700, color: '#38BDF8', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    <UserCheck size={13} /> {author}
-                  </span>
-                ))}
+                {marketingAuthors.length > 0 ? (
+                  marketingAuthors.map((author, idx) => (
+                    <span key={idx} style={{ fontSize: '0.78rem', fontWeight: 700, color: '#38BDF8', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <UserCheck size={13} /> {author}
+                    </span>
+                  ))
+                ) : (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>មិនទាន់មាន (រង់ចាំ Staff Upload)</span>
+                )}
               </div>
             </div>
 
@@ -356,11 +361,15 @@ export default function Dashboard({
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', background: 'var(--dark-inset)', border: '1px solid var(--border-color)', padding: '0.45rem 0.75rem', borderRadius: '8px' }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>បុគ្គលិកបាន Upload:</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
-                {editorAuthors.map((author, idx) => (
-                  <span key={idx} style={{ fontSize: '0.78rem', fontWeight: 700, color: '#C084FC', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    <Scissors size={13} /> {author}
-                  </span>
-                ))}
+                {editorAuthors.length > 0 ? (
+                  editorAuthors.map((author, idx) => (
+                    <span key={idx} style={{ fontSize: '0.78rem', fontWeight: 700, color: '#C084FC', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <Scissors size={13} /> {author}
+                    </span>
+                  ))
+                ) : (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>មិនទាន់មាន (រង់ចាំ Staff Upload)</span>
+                )}
               </div>
             </div>
 
@@ -429,11 +438,15 @@ export default function Dashboard({
             <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', marginBottom: '1rem', background: 'var(--dark-inset)', border: '1px solid var(--border-color)', padding: '0.45rem 0.75rem', borderRadius: '8px' }}>
               <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)' }}>បុគ្គលិកបាន Upload:</span>
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.35rem', flexWrap: 'wrap' }}>
-                {contentAuthors.map((author, idx) => (
-                  <span key={idx} style={{ fontSize: '0.78rem', fontWeight: 700, color: '#FACC15', display: 'flex', alignItems: 'center', gap: '3px' }}>
-                    <Calendar size={13} /> {author}
-                  </span>
-                ))}
+                {contentAuthors.length > 0 ? (
+                  contentAuthors.map((author, idx) => (
+                    <span key={idx} style={{ fontSize: '0.78rem', fontWeight: 700, color: '#FACC15', display: 'flex', alignItems: 'center', gap: '3px' }}>
+                      <Calendar size={13} /> {author}
+                    </span>
+                  ))
+                ) : (
+                  <span style={{ fontSize: '0.75rem', color: 'var(--text-muted)', fontStyle: 'italic' }}>មិនទាន់មាន (រង់ចាំ Staff Upload)</span>
+                )}
               </div>
             </div>
 

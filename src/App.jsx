@@ -158,16 +158,16 @@ export default function App() {
     return INITIAL_WEEKLY_CONTENTS;
   });
 
-  // Reset/Reload Demo Data helper
-  const handleResetDemoData = () => {
-    setDailyReports(INITIAL_DAILY_REPORTS);
-    setEditorReports(INITIAL_EDITOR_REPORTS);
-    setWeeklyContents(INITIAL_WEEKLY_CONTENTS);
-    setUsers(INITIAL_USERS);
-    localStorage.setItem('suvee_daily_reports', JSON.stringify(INITIAL_DAILY_REPORTS));
-    localStorage.setItem('suvee_editor_reports', JSON.stringify(INITIAL_EDITOR_REPORTS));
-    localStorage.setItem('suvee_weekly_contents', JSON.stringify(INITIAL_WEEKLY_CONTENTS));
-    localStorage.setItem('suvee_users', JSON.stringify(INITIAL_USERS));
+  // Clear all data to fresh empty state
+  const handleClearAllData = () => {
+    if (window.confirm("តើអ្នកពិតជាចង់សម្អាតទិន្នន័យរបាយការណ៍ទាំងអស់ឱ្យទៅជាទទេ (Empty Data) ដើម្បីចាប់ផ្តើមបញ្ចូលទិន្នន័យថ្មីមែនទេ?")) {
+      setDailyReports([]);
+      setEditorReports([]);
+      setWeeklyContents([]);
+      localStorage.setItem('suvee_daily_reports', JSON.stringify([]));
+      localStorage.setItem('suvee_editor_reports', JSON.stringify([]));
+      localStorage.setItem('suvee_weekly_contents', JSON.stringify([]));
+    }
   };
 
   useEffect(() => {
@@ -205,9 +205,9 @@ export default function App() {
       dataService.fetchAll().then(res => {
         if (res) {
           if (res.users && res.users.length > 0) setUsers(res.users);
-          if (res.dailyReports && res.dailyReports.length > 0) setDailyReports(res.dailyReports);
-          if (res.editorReports && res.editorReports.length > 0) setEditorReports(res.editorReports);
-          if (res.weeklyContents && res.weeklyContents.length > 0) setWeeklyContents(res.weeklyContents);
+          if (res.dailyReports !== undefined) setDailyReports(res.dailyReports);
+          if (res.editorReports !== undefined) setEditorReports(res.editorReports);
+          if (res.weeklyContents !== undefined) setWeeklyContents(res.weeklyContents);
         }
       });
     }
@@ -340,7 +340,7 @@ export default function App() {
             stats={stats}
             onNavigateToReport={handleQuickNewReport}
             onOpenAddStaff={() => setShowCreateStaffModal(true)}
-            onResetDemoData={handleResetDemoData}
+            onClearAllData={handleClearAllData}
           />
         )}
 
