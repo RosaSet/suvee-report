@@ -35,7 +35,8 @@ export default function DailyReportView({
   weeklyContents = [],
   onAddWeeklyContent,
   onDeleteWeeklyContent,
-  currentUser
+  currentUser,
+  onClearAllData
 }) {
   // Active Column View: 'boost', 'editor', 'content'
   const [activeColumn, setActiveColumn] = useState('boost');
@@ -398,6 +399,19 @@ export default function DailyReportView({
               {myWeeklyContents.length}
             </span>
           </button>
+
+          {onClearAllData && (
+            <button
+              type="button"
+              className="btn btn-outline"
+              style={{ padding: '0.55rem 0.9rem', fontSize: '0.82rem', border: '1px solid rgba(239, 68, 68, 0.4)', color: '#EF4444', background: 'rgba(239, 68, 68, 0.08)' }}
+              onClick={onClearAllData}
+              title="លុបទិន្នន័យទាំងអស់ឱ្យនៅទទេស្អាត (Wipe all data to empty)"
+            >
+              <Trash2 size={14} />
+              <span>សម្អាតទិន្នន័យ (Clear All)</span>
+            </button>
+          )}
         </div>
       </div>
 

@@ -187,7 +187,7 @@ export default function App() {
   });
 
   // Clear all data to fresh empty state
-  const handleClearAllData = () => {
+  const handleClearAllData = async () => {
     if (window.confirm("តើអ្នកពិតជាចង់សម្អាតទិន្នន័យរបាយការណ៍ទាំងអស់ឱ្យទៅជាទទេ (Empty Data) ដើម្បីចាប់ផ្តើមបញ្ចូលទិន្នន័យថ្មីមែនទេ?")) {
       setDailyReports([]);
       setEditorReports([]);
@@ -195,6 +195,10 @@ export default function App() {
       localStorage.setItem('suvee_daily_reports', JSON.stringify([]));
       localStorage.setItem('suvee_editor_reports', JSON.stringify([]));
       localStorage.setItem('suvee_weekly_contents', JSON.stringify([]));
+
+      if (dataService.isConfigured) {
+        await dataService.clearAllReports();
+      }
     }
   };
 
@@ -416,6 +420,7 @@ export default function App() {
               onAddWeeklyContent={handleAddWeeklyContent}
               onDeleteWeeklyContent={handleDeleteWeeklyContent}
               currentUser={currentUser}
+              onClearAllData={handleClearAllData}
             />
           )}
 

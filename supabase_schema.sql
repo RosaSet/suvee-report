@@ -125,29 +125,10 @@ VALUES
   ('usr-editor', 'editor', '123', 'Sokha Heng', 'Video Editor', 'Creative Video Editor', '087 112 233', '2025-06-01', 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150', 'Reels, TikTok Video Hooks & Visual Creatives Specialist')
 ON CONFLICT (id) DO NOTHING;
 
--- Insert Initial Daily Reports (Boost Page & TikTok Ads)
-INSERT INTO public.daily_reports (id, date, platform, campaign_name, objective, spend, impressions, reach, leads, sales_closed, revenue, notes, status, boost_link, author_id, author_name, author_role, author_avatar)
-VALUES
-  ('rep-001', '2026-10-01', 'Facebook', 'SUVÉE Skin Glow - Message Lead', 'Messages (Inbox)', 45.0, 12500, 9800, 32, 7, 280.0, 'Offer ទិញ ១ ថែម ១ ទាក់ទាញខ្លាំង, Admin ឆ្លើយ Chat លឿនក្នុងរង្វង់ 2 នាទី', 'Scale', 'https://facebook.com/suvee/posts/101', 'usr-marketing', 'Vannak Meas', 'Digital Marketing', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'),
-  ('rep-002', '2026-10-01', 'TikTok', 'SUVÉE Sunscreen Spark Ad #04', 'Video Views (Boost)', 35.0, 28400, 22100, 28400, 5, 195.0, 'Boost Video TikTok: View ចាស់ 12,000 ឡើងដល់ 40,400 (+28,400 Views), CPV $0.0012 ធូរថ្លៃខ្លាំង!', 'Scale', 'https://vt.tiktok.com/ZSjX991', 'usr-marketing', 'Vannak Meas', 'Digital Marketing', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'),
-  ('rep-003', '2026-09-30', 'Facebook', 'SUVÉE Premium Cleanser Boost', 'Engagement / Messages', 40.0, 9800, 8200, 18, 3, 120.0, 'Cost Per Message ចាប់ផ្តើមឡើង $2.22, ត្រូវប្តូររូបភាព Ad Banner ថ្មី', 'Optimize', 'https://facebook.com/suvee/posts/102', 'usr-marketing', 'Vannak Meas', 'Digital Marketing', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'),
-  ('rep-004', '2026-09-30', 'TikTok', 'SUVÉE Night Cream Testing Angle B', 'Lead Generation', 25.0, 14200, 11000, 11, 2, 88.0, 'Cost per Lead ខ្ពស់គួរសម ($2.27), កំពុងតេស្ត Creator ផ្សេងទៀត', 'Optimize', 'https://vt.tiktok.com/ZSjX992', 'usr-marketing', 'Vannak Meas', 'Digital Marketing', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'),
-  ('rep-005', '2026-09-29', 'Facebook', 'SUVÉE Whitening Serum Retargeting', 'Sales / Retargeting', 20.0, 4300, 3800, 16, 6, 310.0, 'Retargeting លើអ្នកដែលធ្លាប់ Inbox ៩០ ថ្ងៃកន្លងមក ROAS 15.5x ខ្លាំងណាស់!', 'Scale', 'https://facebook.com/suvee/posts/103', 'usr-marketing', 'Vannak Meas', 'Digital Marketing', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150')
-ON CONFLICT (id) DO NOTHING;
+-- Clean State: No dummy reports inserted. System is 100% clean and ready for real staff data!
+-- If you already ran previous schema with demo data, run this command in SQL Editor to wipe:
+-- TRUNCATE TABLE public.daily_reports;
+-- TRUNCATE TABLE public.editor_reports;
+-- TRUNCATE TABLE public.weekly_contents;
 
--- Insert Initial Video Editor Reports
-INSERT INTO public.editor_reports (id, date, editor_name, video_title, platform, videos_count, hooks_count, video_format, drive_link, status, notes, author_id, author_name, author_role, author_avatar)
-VALUES
-  ('edit-001', '2026-10-01', 'Sokha (Editor)', 'SUVÉE Radiance Serum - 7-Day Transformation', 'TikTok & Reels', 2, 6, '9:16 Vertical (1080p)', 'https://drive.google.com/suvee-edits/oct-01', 'Ready to Launch', 'កាត់ជា 9:16 ច្បាស់ 1080p, ដាក់ Subtitles ខ្មែររលូន, សំឡេង Sound Effect Drop', 'usr-editor', 'Sokha Heng', 'Video Editor', 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150'),
-  ('edit-002', '2026-10-01', 'Sokha (Editor)', 'SUVÉE Sunscreen Water Test Spark Ad', 'TikTok Spark Ads', 1, 4, '9:16 Vertical (1080p)', 'https://drive.google.com/suvee-edits/sunscreen-v1', 'Ready to Launch', 'Hook Shock Factor: "តើឡេការពារកម្តៅថ្ងៃនេះធន់នឹងទឹកកម្រិតណា?"', 'usr-editor', 'Sokha Heng', 'Video Editor', 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150'),
-  ('edit-003', '2026-09-30', 'Sokha (Editor)', 'SUVÉE Cleanser Foam Texture & ASMR', 'Facebook Reels', 2, 5, '9:16 Vertical (1080p)', 'https://drive.google.com/suvee-edits/cleanser-asmr', 'Ready to Launch', 'ផ្ដោតលើ Macro Shot សាច់ពពុះសាប៊ូ និងសំឡេងលាងមុខ', 'usr-editor', 'Sokha Heng', 'Video Editor', 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150')
-ON CONFLICT (id) DO NOTHING;
-
--- Insert Initial Weekly Contents
-INSERT INTO public.weekly_contents (id, week, week_label, date, title, content_type, platform, drive_link, boost_link, status, script_file_name, script_file_size, script_text, notes, author_id, author_name, author_role, author_avatar)
-VALUES
-  ('cnt-001', 'Week 1', 'Week 1 (ថ្ងៃទី 01 - 07 តុលា)', '2026-10-01', 'Video UGC Before & After 7-Day Transformation', 'Short-form Video (9:16)', 'TikTok & Reels', 'https://drive.google.com/suvee/week1-video-01', 'https://vt.tiktok.com/ZSjX991', 'Uploaded & Boosted', 'suvee_ugc_transformation_script.docx', '24.8 KB', '【Hook 0-3s】: នេះជាស្បែកមុខរបស់ខ្ញុំកាលពី ៧ ថ្ងៃមុន និងពេលនេះ... គ្រាន់តែប្រើ ១ ដំណក់រាល់យប់!\n【Problem 3-10s】: ធ្លាប់ពិបាកចិត្តរឿងមុខស្រអាប់ ឡើងជាំ ប្រើអ្វីក៏មិនបាត់?\n【Solution 10-22s】: សេរ៉ូម SUVÉE Radiance ជាមួយ Niacinamide 10% ជ្រាបចូលលឿន មិនស្អិត\n【Offer & CTA 22-30s】: ប្រូម៉ូសិនពិសេសប្រចាំខែតុលា ទិញ ១ ថែម ១! ចុច Link ខាងក្រោមកម្ម៉ង់ភ្លាម!', 'កាត់ជា 9:16 ច្បាស់ 1080p, Hook ខ្លាំងអត្រាចូលមើលខ្ពស់ (+28k views)', 'usr-editor', 'Sokha Heng', 'Video Editor', 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150'),
-  ('cnt-002', 'Week 1', 'Week 1 (ថ្ងៃទី 01 - 07 តុលា)', '2026-10-01', 'Photo Banner Offer ទិញ ១ ថែម ១ Skin Glow Set', 'Graphic Banner (1:1 / 4:5)', 'Facebook Page', 'https://drive.google.com/suvee/week1-banner-offer', 'https://facebook.com/suvee/posts/882199', 'Active Boost', 'ad_copy_offer_buy1get1.txt', '12.4 KB', '🌟 WOW PROMOTION! ទិញ ១ ថែម ១ ភ្លាមៗ!\n✨ ឈុត Skin Glow Set ជួយឱ្យស្បែកភ្លឺរលោង ចែងចាំងដូចកញ្ចក់\n📦 ហ្វ្រីដឹកជញ្ជូនទូទាំងប្រទេស\n👉 Inbox មកកាន់ផេកឥឡូវនេះ ដើម្បីទទួលបានការប្រឹក្សាស្បែកដោយឥតគិតថ្លៃ!', 'Campaign ជោគជ័យខ្លាំង Admin ឆ្លើយ Chat រង្វង់ 2 នាទី (32 Leads)', 'usr-marketing', 'Vannak Meas', 'Digital Marketing', 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=150'),
-  ('cnt-003', 'Week 2', 'Week 2 (ថ្ងៃទី 08 - 14 តុលា)', '2026-10-08', 'SUVÉE Sunscreen Water Test Spark Ad (Shock Factor)', 'Short-form Video (9:16)', 'TikTok Spark Ads', 'https://drive.google.com/suvee/week2-sunscreen-test', '', 'Ready to Launch', 'sunscreen_water_test_hook.docx', '31.2 KB', '【Hook Shock 0-3s】: ឈប់ខាតលុយទិញឡេការពារកម្តៅថ្ងៃលាបហើយហៀរប្រឡាក់អាវទៀតទៅ!\n【Water Test 3-15s】: ចាក់ទឹកបាញ់លើដៃផ្ទាល់ បង្ហាញភាពធន់នឹងទឹក និងញើស SPF50+ PA++++\n【CTA 15-25s】: ការពារស្បែកបែប Professional ជាមួយ SUVÉE Sunscreen!', 'ផលិតបាន ៤ Hook ប្លែកៗគ្នាសម្រាប់ A/B Test', 'usr-editor', 'Sokha Heng', 'Video Editor', 'https://images.unsplash.com/photo-1539571696357-5a69c17a67c6?w=150')
-ON CONFLICT (id) DO NOTHING;
 

@@ -270,6 +270,19 @@ export const dataService = {
     }
   },
 
+  async clearAllReports() {
+    if (!isSupabaseConfigured) return;
+    try {
+      await Promise.all([
+        supabase.from('daily_reports').delete().neq('id', 'safe-zero-placeholder'),
+        supabase.from('editor_reports').delete().neq('id', 'safe-zero-placeholder'),
+        supabase.from('weekly_contents').delete().neq('id', 'safe-zero-placeholder')
+      ]);
+    } catch (err) {
+      console.error("Supabase clearAllReports error:", err);
+    }
+  },
+
   // Users
   async insertUser(user) {
     if (!isSupabaseConfigured) return;
