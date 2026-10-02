@@ -32,6 +32,7 @@ import {
 } from 'lucide-react';
 import ScriptModal from './ScriptModal';
 import ReviewFeedbackModal from './ReviewFeedbackModal';
+import StaffInspectionModal from './StaffInspectionModal';
 
 export default function Dashboard({ 
   dailyReports = [], 
@@ -60,8 +61,12 @@ export default function Dashboard({
   const [reviewModalReport, setReviewModalReport] = useState(null);
   const [feedbackSuccessToast, setFeedbackSuccessToast] = useState('');
 
-  // Staff Feed Filter
+  // Boss Inspect Staff Modal State (3 Options: Boost, Video Editor, Content)
+  const [inspectedStaff, setInspectedStaff] = useState(null);
+
+  // Staff Feed Filter & Personal vs Team Scope
   const [feedFilter, setFeedFilter] = useState('all');
+  const [staffFeedScope, setStaffFeedScope] = useState('mine'); // 'mine' = personal, 'all' = team
 
   const handleApproveReport = (reportId, reportType) => {
     if (reportType === 'editor') {
@@ -233,7 +238,40 @@ export default function Dashboard({
     }))
   ].sort((a, b) => new Date(b.date) - new Date(a.date));
 
-  const filteredFeed = allSubmissions.filter(item => {
+  // Filter for Current User (Personal Stats for Staff View)
+  const isMine = (item) => {
+    if (!currentUser) return false;
+    return (
+      item?.authorId === currentUser?.id ||
+      item?.editorName?.toLowerCase() === currentUser?.name?.toLowerCase() ||
+      item?.authorName?.toLowerCase() === currentUser?.name?.toLowerCase() ||
+      item?.authorName?.toLowerCase() === currentUser?.username?.toLowerCase()
+    );
+  };
+
+  const myBoostReports = (dailyReports || []).filter(isMine);
+  const myEditorReports = (editorReports || []).filter(isMine);
+  const myWeeklyContents = (weeklyContents || []).filter(isMine);
+
+  const mySpend = myBoostReports.reduce((sum, r) => sum + Number(r.spend || 0), 0);
+  const myRevenue = myBoostReports.reduce((sum, r) => sum + Number(r.revenue || 0), 0);
+  const myLeads = myBoostReports.reduce((sum, r) => sum + Number(r.leads || 0), 0);
+  const myROAS = mySpend > 0 ? (myRevenue / mySpend).toFixed(2) : '0.00';
+
+  const myVideos = myEditorReports.reduce((sum, r) => sum + Number(r.videosCount || 0), 0);
+  const myHooks = myEditorReports.reduce((sum, r) => sum + Number(r.hooksCount || 0), 0);
+  const myAvgHooks = myVideos > 0 ? (myHooks / myVideos).toFixed(1) : '0.0';
+
+  const myW1 = myWeeklyContents.filter(c => c && c.week === 'Week 1').length;
+  const myW2 = myWeeklyContents.filter(c => c && c.week === 'Week 2').length;
+  const myW3 = myWeeklyContents.filter(c => c && c.week === 'Week 3').length;
+  const myW4 = myWeeklyContents.filter(c => c && c.week === 'Week 4').length;
+  const myTotalContents = myWeeklyContents.length;
+
+  const myAllSubmissions = allSubmissions.filter(isMine);
+
+  const baseFeed = staffFeedScope === 'mine' ? myAllSubmissions : allSubmissions;
+  const filteredFeed = baseFeed.filter(item => {
     if (feedFilter === 'boost') return item.feedType === 'boost';
     if (feedFilter === 'editor') return item.feedType === 'editor';
     if (feedFilter === 'content') return item.feedType === 'content';
@@ -275,6 +313,46 @@ export default function Dashboard({
           </div>
 
           <div style={{ display: 'flex', gap: '0.75rem', alignItems: 'center', flexWrap: 'wrap' }}>
+            {/* Quick Staff Filter / Inspector Dropdown */}
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.5rem',
+              background: 'var(--dark-inset)',
+              border: '1px solid rgba(245, 158, 11, 0.45)',
+              borderRadius: '8px',
+              padding: '0.4rem 0.75rem',
+              boxShadow: '0 2px 8px rgba(0,0,0,0.25)'
+            }}>
+              <Search size={15} color="#F59E0B" />
+              <select
+                value={inspectedStaff?.id || ''}
+                onChange={(e) => {
+                  const u = users.find(x => x.id === e.target.value);
+                  if (u) setInspectedStaff(u);
+                }}
+                style={{
+                  background: 'transparent',
+                  border: 'none',
+                  color: 'var(--text-primary)',
+                  fontSize: '0.84rem',
+                  fontWeight: 700,
+                  cursor: 'pointer',
+                  outline: 'none',
+                  minWidth: '220px'
+                }}
+              >
+                <option value="" style={{ background: '#0F172A', color: '#94A3B8' }}>
+                  -- 🔍 ពិនិត្យ Staff ៣ ទម្រង់ --
+                </option>
+                {users.map(u => (
+                  <option key={u.id} value={u.id} style={{ background: '#0F172A', color: '#F8FAFC' }}>
+                    👤 {u.name} ({u.role})
+                  </option>
+                ))}
+              </select>
+            </div>
+
             {onClearAllData && (
               <button 
                 type="button"
@@ -1197,46 +1275,137 @@ export default function Dashboard({
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1rem' }}>
-            {users.map(u => (
-              <div 
-                key={u.id}
-                style={{ 
-                  background: 'var(--dark-inset)', 
-                  border: '1px solid var(--border-color)', 
-                  borderRadius: '12px', 
-                  padding: '1rem',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '0.85rem'
-                }}
-              >
-                <img 
-                  src={u.avatar} 
-                  alt={u.name} 
-                  style={{ width: '42px', height: '42px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-color)' }}
-                />
-                <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
-                    <span style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-primary)' }}>{u.name}</span>
-                    <span style={{ 
-                      fontSize: '0.68rem', 
-                      fontWeight: 700, 
-                      padding: '1px 6px', 
-                      borderRadius: '6px',
-                      background: u.role === 'Admin' ? 'rgba(245, 158, 11, 0.15)' : u.role === 'Digital Marketing' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(192, 132, 252, 0.15)',
-                      color: u.role === 'Admin' ? '#F59E0B' : u.role === 'Digital Marketing' ? '#38BDF8' : '#C084FC'
-                    }}>
-                      {u.role}
+            {users.map(u => {
+              const uBoost = (dailyReports || []).filter(r => r && (r.authorId === u.id || r.authorName?.toLowerCase() === u.name?.toLowerCase())).length;
+              const uEditor = (editorReports || []).filter(r => r && (r.authorId === u.id || r.editorName?.toLowerCase() === u.name?.toLowerCase() || r.authorName?.toLowerCase() === u.name?.toLowerCase())).length;
+              const uContent = (weeklyContents || []).filter(r => r && (r.authorId === u.id || r.authorName?.toLowerCase() === u.name?.toLowerCase())).length;
+              const totalUploads = uBoost + uEditor + uContent;
+
+              return (
+                <div 
+                  key={u.id}
+                  onClick={() => setInspectedStaff(u)}
+                  style={{ 
+                    background: 'var(--dark-inset)', 
+                    border: '1px solid var(--border-color)', 
+                    borderRadius: '12px', 
+                    padding: '1rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.85rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s ease',
+                    boxShadow: '0 2px 8px rgba(0,0,0,0.2)'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--emerald-main)';
+                    e.currentTarget.style.transform = 'translateY(-2px)';
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.borderColor = 'var(--border-color)';
+                    e.currentTarget.style.transform = 'translateY(0)';
+                  }}
+                >
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '0.85rem' }}>
+                    <img 
+                      src={u.avatar} 
+                      alt={u.name} 
+                      style={{ width: '44px', height: '44px', borderRadius: '50%', objectFit: 'cover', border: '2px solid var(--border-color)' }}
+                    />
+                    <div style={{ flex: 1 }}>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', flexWrap: 'wrap' }}>
+                        <span style={{ fontWeight: 800, fontSize: '0.92rem', color: 'var(--text-primary)' }}>{u.name}</span>
+                        <span style={{ 
+                          fontSize: '0.68rem', 
+                          fontWeight: 700, 
+                          padding: '1px 6px', 
+                          borderRadius: '6px',
+                          background: u.role === 'Admin' ? 'rgba(245, 158, 11, 0.15)' : u.role === 'Digital Marketing' ? 'rgba(56, 189, 248, 0.15)' : 'rgba(192, 132, 252, 0.15)',
+                          color: u.role === 'Admin' ? '#F59E0B' : u.role === 'Digital Marketing' ? '#38BDF8' : '#C084FC'
+                        }}>
+                          {u.role}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
+                        Login: <strong>@{u.username}</strong> • ចាប់ផ្តើម: {u.startDate || '2025-01-01'}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div style={{
+                    display: 'flex',
+                    justifyContent: 'space-between',
+                    alignItems: 'center',
+                    paddingTop: '0.65rem',
+                    borderTop: '1px solid var(--border-color)',
+                    fontSize: '0.78rem'
+                  }}>
+                    <span style={{ color: 'var(--text-muted)' }}>
+                      បាន Upload: <strong style={{ color: totalUploads > 0 ? 'var(--emerald-main)' : '#94A3B8' }}>{totalUploads} របាយការណ៍</strong>
+                    </span>
+                    <span style={{ color: '#38BDF8', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
+                      🔍 ពិនិត្យ ៣ ទម្រង់ &rarr;
                     </span>
                   </div>
-                  <div style={{ fontSize: '0.75rem', color: 'var(--text-muted)', marginTop: '2px' }}>
-                    Login: <strong>@{u.username}</strong> • ចាប់ផ្តើម: {u.startDate || '2025-01-01'}
-                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
+
+        {/* Boss Staff Inspection Modal (3 Options: Boost, Video Editor, Content) */}
+        <StaffInspectionModal
+          isOpen={!!inspectedStaff}
+          onClose={() => setInspectedStaff(null)}
+          staff={inspectedStaff}
+          allStaffs={users}
+          onSelectStaff={(s) => setInspectedStaff(s)}
+          dailyReports={dailyReports}
+          editorReports={editorReports}
+          weeklyContents={weeklyContents}
+          onApproveReport={handleApproveReport}
+          onRequestRevision={(rep) => setReviewModalReport(rep)}
+        />
+
+        {/* BOSS REVIEW / REJECT FEEDBACK MODAL */}
+        <ReviewFeedbackModal
+          isOpen={!!reviewModalReport}
+          onClose={() => setReviewModalReport(null)}
+          report={reviewModalReport}
+          onSubmitFeedback={handleSubmitFeedback}
+          onApproveReport={handleApproveReport}
+        />
+
+        {/* SCRIPT MODAL */}
+        <ScriptModal 
+          isOpen={!!selectedScriptContent}
+          onClose={() => setSelectedScriptContent(null)}
+          content={selectedScriptContent}
+        />
+
+        {/* TOAST NOTIFICATION */}
+        {feedbackSuccessToast && (
+          <div style={{
+            position: 'fixed',
+            bottom: '24px',
+            right: '24px',
+            background: 'rgba(15, 23, 42, 0.95)',
+            color: '#10B981',
+            border: '1px solid #10B981',
+            padding: '0.85rem 1.25rem',
+            borderRadius: '10px',
+            fontSize: '0.88rem',
+            fontWeight: 700,
+            boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+            zIndex: 99999,
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px',
+            backdropFilter: 'blur(8px)'
+          }}>
+            {feedbackSuccessToast}
+          </div>
+        )}
 
       </div>
     );
@@ -1278,75 +1447,232 @@ export default function Dashboard({
         </button>
       </div>
 
-      {/* 3 Quick Action Cards for Staff */}
+      {/* 3 Quick Action & Personal Stats Cards for Staff */}
       <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: '1.25rem', marginBottom: '2rem' }}>
         
-        {/* CTA 1: Boost Page & TikTok */}
+        {/* Card 1: Boost Page & TikTok */}
         <div 
           className="glass-card" 
-          style={{ cursor: 'pointer', padding: '1.25rem', border: '1px solid var(--border-color)' }}
+          style={{ 
+            cursor: 'pointer', 
+            padding: '1.35rem', 
+            border: '1px solid var(--border-color)',
+            background: 'var(--bg-glass)',
+            transition: 'all 0.25s ease',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}
           onClick={onNavigateToReport}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.75rem' }}>
-            <span style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(56, 189, 248, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38BDF8' }}>
-              <TrendingUp size={18} />
-            </span>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>🔵 Boost Page & TikTok</div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Paid Traffic & Ads Spend</div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <span style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(56, 189, 248, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#38BDF8' }}>
+                  <TrendingUp size={20} />
+                </span>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>🔵 Boost Page & TikTok</div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Paid Traffic & Ads Spend</div>
+                </div>
+              </div>
+              <span style={{
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                padding: '3px 8px',
+                borderRadius: '6px',
+                background: myBoostReports.length === 0 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(16, 185, 129, 0.15)',
+                color: myBoostReports.length === 0 ? '#F59E0B' : '#10B981',
+                border: '1px solid currentColor'
+              }}>
+                {myBoostReports.length === 0 ? '⚠️ មិនទាន់បញ្ចូល (0)' : `✅ បញ្ចូល ${myBoostReports.length}`}
+              </span>
             </div>
+
+            {/* Metrics Breakdown (Shows 0 if empty) */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(3, 1fr)', 
+              gap: '0.5rem', 
+              background: 'var(--dark-inset)', 
+              padding: '0.75rem', 
+              borderRadius: '10px', 
+              marginBottom: '1rem',
+              textAlign: 'center'
+            }}>
+              <div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Spend សរុប</div>
+                <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#38BDF8' }}>${mySpend.toLocaleString()}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Leads ទទួលបាន</div>
+                <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--emerald-main)' }}>{myLeads}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>ROAS មធ្យម</div>
+                <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#FACC15' }}>{myROAS}x</div>
+              </div>
+            </div>
+
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 0.85rem 0' }}>
+              បញ្ចូលទិន្នន័យចំណាយ Boost Ads, Leads សរុប និង Milestone តាមថ្ងៃ
+            </p>
           </div>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 0.85rem 0' }}>
-            បញ្ចូលទិន្នន័យ Boost ថ្មី, Spend, Leads, Sales និង Milestone តាមថ្ងៃ
-          </p>
-          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#38BDF8', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            ចុចទៅបញ្ចូលទិន្នន័យ &rarr;
+
+          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#38BDF8', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            + បញ្ចូលទិន្នន័យ Boost &rarr;
           </span>
         </div>
 
-        {/* CTA 2: Video Editor */}
+        {/* Card 2: Video Editor */}
         <div 
           className="glass-card" 
-          style={{ cursor: 'pointer', padding: '1.25rem', border: '1px solid var(--border-color)' }}
+          style={{ 
+            cursor: 'pointer', 
+            padding: '1.35rem', 
+            border: '1px solid var(--border-color)',
+            background: 'var(--bg-glass)',
+            transition: 'all 0.25s ease',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}
           onClick={onNavigateToReport}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.75rem' }}>
-            <span style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(192, 132, 252, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#C084FC' }}>
-              <Scissors size={18} />
-            </span>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>✂️ Video Editor</div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Videos Cut & Hook Testing</div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <span style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(192, 132, 252, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#C084FC' }}>
+                  <Scissors size={20} />
+                </span>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>✂️ Video Editor</div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Videos Cut & Hook Testing</div>
+                </div>
+              </div>
+              <span style={{
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                padding: '3px 8px',
+                borderRadius: '6px',
+                background: myEditorReports.length === 0 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(192, 132, 252, 0.15)',
+                color: myEditorReports.length === 0 ? '#F59E0B' : '#C084FC',
+                border: '1px solid currentColor'
+              }}>
+                {myEditorReports.length === 0 ? '⚠️ មិនទាន់បញ្ចូល (0)' : `✅ បានកាត់ ${myVideos} Vids`}
+              </span>
             </div>
+
+            {/* Metrics Breakdown (Shows 0 if empty) */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(3, 1fr)', 
+              gap: '0.5rem', 
+              background: 'var(--dark-inset)', 
+              padding: '0.75rem', 
+              borderRadius: '10px', 
+              marginBottom: '1rem',
+              textAlign: 'center'
+            }}>
+              <div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>វីដេអូកាត់រួច</div>
+                <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#C084FC' }}>{myVideos} Vids</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>Hooks បង្កើតបាន</div>
+                <div style={{ fontSize: '0.92rem', fontWeight: 800, color: 'var(--emerald-main)' }}>{myHooks} Hooks</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.68rem', color: 'var(--text-muted)' }}>មធ្យម Hooks</div>
+                <div style={{ fontSize: '0.92rem', fontWeight: 800, color: '#FACC15' }}>{myAvgHooks}/Vid</div>
+              </div>
+            </div>
+
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 0.85rem 0' }}>
+              កត់ត្រាចំនួនវីដេអូកាត់បាន, ចំនួន Hooks និងដាក់ Google Drive Link
+            </p>
           </div>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 0.85rem 0' }}>
-            កត់ត្រាចំនួនវីដេអូកាត់បាន, ចំនួន Hooks និងដាក់ Google Drive Link
-          </p>
-          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#C084FC', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            ចុចទៅបញ្ចូលទិន្នន័យ &rarr;
+
+          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#C084FC', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            + បញ្ចូលទិន្នន័យ Video &rarr;
           </span>
         </div>
 
-        {/* CTA 3: Upload Content តាម Week */}
+        {/* Card 3: Upload Content តាម Week */}
         <div 
           className="glass-card" 
-          style={{ cursor: 'pointer', padding: '1.25rem', border: '1px solid var(--border-color)' }}
+          style={{ 
+            cursor: 'pointer', 
+            padding: '1.35rem', 
+            border: '1px solid var(--border-color)',
+            background: 'var(--bg-glass)',
+            transition: 'all 0.25s ease',
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'space-between'
+          }}
           onClick={onNavigateToReport}
         >
-          <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem', marginBottom: '0.75rem' }}>
-            <span style={{ width: '36px', height: '36px', borderRadius: '10px', background: 'rgba(250, 204, 21, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FACC15' }}>
-              <Calendar size={18} />
-            </span>
-            <div>
-              <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>📅 Upload Content តាម Week</div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Week 1, Week 2, Week 3, Week 4</div>
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.85rem' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.65rem' }}>
+                <span style={{ width: '38px', height: '38px', borderRadius: '10px', background: 'rgba(250, 204, 21, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#FACC15' }}>
+                  <Calendar size={20} />
+                </span>
+                <div>
+                  <div style={{ fontWeight: 800, fontSize: '1.05rem', color: 'var(--text-primary)' }}>📅 Upload Content តាម Week</div>
+                  <div style={{ fontSize: '0.72rem', color: 'var(--text-muted)' }}>Week 1 ដល់ Week 4</div>
+                </div>
+              </div>
+              <span style={{
+                fontSize: '0.7rem',
+                fontWeight: 700,
+                padding: '3px 8px',
+                borderRadius: '6px',
+                background: myTotalContents === 0 ? 'rgba(245, 158, 11, 0.15)' : 'rgba(250, 204, 21, 0.15)',
+                color: myTotalContents === 0 ? '#F59E0B' : '#FACC15',
+                border: '1px solid currentColor'
+              }}>
+                {myTotalContents === 0 ? '⚠️ មិនទាន់បញ្ចូល (0)' : `✅ បញ្ចូល ${myTotalContents} Posts`}
+              </span>
             </div>
+
+            {/* Metrics Breakdown Across Weeks (Shows 0 if empty) */}
+            <div style={{ 
+              display: 'grid', 
+              gridTemplateColumns: 'repeat(4, 1fr)', 
+              gap: '0.35rem', 
+              background: 'var(--dark-inset)', 
+              padding: '0.75rem', 
+              borderRadius: '10px', 
+              marginBottom: '1rem',
+              textAlign: 'center'
+            }}>
+              <div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>W1</div>
+                <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)' }}>{myW1}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>W2</div>
+                <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)' }}>{myW2}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>W3</div>
+                <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)' }}>{myW3}</div>
+              </div>
+              <div>
+                <div style={{ fontSize: '0.65rem', color: 'var(--text-muted)' }}>W4</div>
+                <div style={{ fontSize: '0.88rem', fontWeight: 800, color: 'var(--text-primary)' }}>{myW4}</div>
+              </div>
+            </div>
+
+            <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 0.85rem 0' }}>
+              Upload Content តាមសប្តាហ៍នីមួយៗ (Video 9:16, Banner, Carousel, UGC)
+            </p>
           </div>
-          <p style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', margin: '0 0 0.85rem 0' }}>
-            Upload Content តាមសប្តាហ៍នីមួយៗ (Video 9:16, Banner, Carousel, UGC)
-          </p>
-          <span style={{ fontSize: '0.8rem', fontWeight: 700, color: '#FACC15', display: 'flex', alignItems: 'center', gap: '4px' }}>
-            ចុចទៅបញ្ចូលទិន្នន័យ &rarr;
+
+          <span style={{ fontSize: '0.82rem', fontWeight: 700, color: '#FACC15', display: 'flex', alignItems: 'center', gap: '4px' }}>
+            + Upload Content តាម Week &rarr;
           </span>
         </div>
 
@@ -1361,70 +1687,126 @@ export default function Dashboard({
                 <Layers size={18} />
               </span>
               <h3 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 800, color: 'var(--text-primary)' }}>
-                រាល់ទិន្នន័យដែល Staff បាន Upload (Live Activity Feed)
+                រាល់ទិន្នន័យដែលបាន Upload ចូលប្រព័ន្ធ
               </h3>
             </div>
             <p style={{ margin: '4px 0 0 0', fontSize: '0.82rem', color: 'var(--text-muted)' }}>
-              កត់ត្រារាល់របាយការណ៍ដែលក្រុមការងារបាន Upload ចូលប្រព័ន្ធ
+              {staffFeedScope === 'mine' 
+                ? `បង្ហាញតែទិន្នន័យដែល ${currentUser?.name || 'អ្នក'} បាន Upload (${myAllSubmissions.length} កំណត់ត្រា)` 
+                : `បង្ហាញទិន្នន័យរបស់គ្រប់ Staff ទាំងអស់ក្នុងប្រព័ន្ធ (${allSubmissions.length} កំណត់ត្រា)`}
             </p>
           </div>
 
-          <div style={{ display: 'flex', gap: '0.5rem', background: 'var(--bg-glass)', padding: '0.35rem', borderRadius: '10px', border: '1px solid var(--border-color)', flexWrap: 'wrap' }}>
-            <button
-              type="button"
-              className={`btn ${feedFilter === 'all' ? 'btn-primary' : 'btn-outline'}`}
-              style={{ fontSize: '0.8rem', padding: '0.4rem 0.85rem', border: 'none' }}
-              onClick={() => setFeedFilter('all')}
-            >
-              ទាំងអស់ ({allSubmissions.length})
-            </button>
-            <button
-              type="button"
-              className={`btn ${feedFilter === 'boost' ? 'btn-primary' : 'btn-outline'}`}
-              style={{ fontSize: '0.8rem', padding: '0.4rem 0.85rem', border: 'none' }}
-              onClick={() => setFeedFilter('boost')}
-            >
-              🔵 Boost Ads ({dailyReports.length})
-            </button>
-            <button
-              type="button"
-              className={`btn ${feedFilter === 'editor' ? 'btn-primary' : 'btn-outline'}`}
-              style={{ fontSize: '0.8rem', padding: '0.4rem 0.85rem', border: 'none' }}
-              onClick={() => setFeedFilter('editor')}
-            >
-              ✂️ Video Editor ({editorReports.length})
-            </button>
-            <button
-              type="button"
-              className={`btn ${feedFilter === 'content' ? 'btn-primary' : 'btn-outline'}`}
-              style={{ fontSize: '0.8rem', padding: '0.4rem 0.85rem', border: 'none' }}
-              onClick={() => setFeedFilter('content')}
-            >
-              📅 Content តាម Week ({weeklyContents.length})
-            </button>
+          {/* Scope and Department Filters */}
+          <div style={{ display: 'flex', gap: '0.65rem', flexWrap: 'wrap', alignItems: 'center' }}>
+            {/* Scope Switcher: My uploads vs All staff */}
+            <div style={{ display: 'flex', background: 'var(--dark-inset)', padding: '3px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+              <button
+                type="button"
+                className={`btn ${staffFeedScope === 'mine' ? 'btn-primary' : 'btn-outline'}`}
+                style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', border: 'none' }}
+                onClick={() => setStaffFeedScope('mine')}
+                title="បង្ហាញតែទិន្នន័យដែលខ្ញុំបាន upload"
+              >
+                👤 ទិន្នន័យខ្ញុំផ្ទាល់ ({myAllSubmissions.length})
+              </button>
+              <button
+                type="button"
+                className={`btn ${staffFeedScope === 'all' ? 'btn-primary' : 'btn-outline'}`}
+                style={{ fontSize: '0.78rem', padding: '0.35rem 0.75rem', border: 'none' }}
+                onClick={() => setStaffFeedScope('all')}
+                title="បង្ហាញទិន្នន័យក្រុមការងារទាំងអស់"
+              >
+                👥 គ្រប់ Staff ទាំងអស់ ({allSubmissions.length})
+              </button>
+            </div>
+
+            {/* Department Filter */}
+            <div style={{ display: 'flex', gap: '0.35rem', background: 'var(--bg-glass)', padding: '3px', borderRadius: '10px', border: '1px solid var(--border-color)' }}>
+              <button
+                type="button"
+                className={`btn ${feedFilter === 'all' ? 'btn-primary' : 'btn-outline'}`}
+                style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem', border: 'none' }}
+                onClick={() => setFeedFilter('all')}
+              >
+                ទាំងអស់
+              </button>
+              <button
+                type="button"
+                className={`btn ${feedFilter === 'boost' ? 'btn-primary' : 'btn-outline'}`}
+                style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem', border: 'none' }}
+                onClick={() => setFeedFilter('boost')}
+              >
+                🔵 Boost
+              </button>
+              <button
+                type="button"
+                className={`btn ${feedFilter === 'editor' ? 'btn-primary' : 'btn-outline'}`}
+                style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem', border: 'none' }}
+                onClick={() => setFeedFilter('editor')}
+              >
+                ✂️ Editor
+              </button>
+              <button
+                type="button"
+                className={`btn ${feedFilter === 'content' ? 'btn-primary' : 'btn-outline'}`}
+                style={{ fontSize: '0.75rem', padding: '0.3rem 0.65rem', border: 'none' }}
+                onClick={() => setFeedFilter('content')}
+              >
+                📅 Content
+              </button>
+            </div>
           </div>
         </div>
 
         {/* Feed List */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-          {filteredFeed.map((item) => {
-            const IconComponent = item.feedIcon;
-            const isBoost = item.feedType === 'boost';
-            const isContent = item.feedType === 'content';
-
-            return (
-              <div 
-                key={item.id}
-                style={{
-                  background: 'var(--bg-glass)',
-                  border: '1px solid var(--border-color)',
-                  borderRadius: '12px',
-                  padding: '1.25rem',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '0.75rem'
-                }}
+          {filteredFeed.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: '3rem 1.5rem',
+              background: 'var(--dark-inset)',
+              borderRadius: '12px',
+              border: '1px dashed var(--border-color)'
+            }}>
+              <span style={{ fontSize: '2.2rem', display: 'block', marginBottom: '0.65rem' }}>📭</span>
+              <h4 style={{ margin: '0 0 0.4rem 0', color: 'var(--text-primary)', fontSize: '1.05rem', fontWeight: 700 }}>
+                {staffFeedScope === 'mine' ? 'មិនទាន់មានទិន្នន័យដែលអ្នកបាន Upload នៅឡើយទេ (ចំនួន 0)' : 'មិនទាន់មានទិន្នន័យក្នុងប្រព័ន្ធនៅឡើយទេ (ចំនួន 0)'}
+              </h4>
+              <p style={{ margin: '0 0 1.25rem 0', color: 'var(--text-muted)', fontSize: '0.84rem', maxWidth: '480px', marginLeft: 'auto', marginRight: 'auto' }}>
+                {staffFeedScope === 'mine'
+                  ? 'លោកអ្នកអាចចាប់ផ្តើមបញ្ចូលទិន្នន័យ Boost Page, Video Editor ឬ Content តាម Week ដោយចុចប៊ូតុងខាងក្រោម'
+                  : 'រាល់ទិន្នន័យដែលបុគ្គលិកទាំងអស់ Upload នឹងបង្ហាញនៅទីនេះ'}
+              </p>
+              <button 
+                type="button"
+                className="btn btn-primary"
+                onClick={onNavigateToReport}
+                style={{ fontSize: '0.85rem', padding: '0.5rem 1.15rem' }}
               >
+                <PlusCircle size={15} />
+                <span>+ បញ្ចូលទិន្នន័យឥឡូវនេះ (Upload Report)</span>
+              </button>
+            </div>
+          ) : (
+            filteredFeed.map((item) => {
+              const IconComponent = item.feedIcon;
+              const isBoost = item.feedType === 'boost';
+              const isContent = item.feedType === 'content';
+
+              return (
+                <div 
+                  key={item.id}
+                  style={{
+                    background: 'var(--bg-glass)',
+                    border: '1px solid var(--border-color)',
+                    borderRadius: '12px',
+                    padding: '1.25rem',
+                    display: 'flex',
+                    flexDirection: 'column',
+                    gap: '0.75rem'
+                  }}
+                >
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.5rem', borderBottom: '1px solid var(--border-color)', paddingBottom: '0.75rem' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
                     <img 
@@ -1683,9 +2065,23 @@ export default function Dashboard({
                 </div>
               </div>
             );
-          })}
+          }))}
         </div>
       </div>
+
+      {/* BOSS STAFF INSPECTION MODAL (3 OPTIONS: BOOST, VIDEO EDITOR, CONTENT) */}
+      <StaffInspectionModal
+        isOpen={!!inspectedStaff}
+        onClose={() => setInspectedStaff(null)}
+        staff={inspectedStaff}
+        allStaffs={users}
+        onSelectStaff={(s) => setInspectedStaff(s)}
+        dailyReports={dailyReports}
+        editorReports={editorReports}
+        weeklyContents={weeklyContents}
+        onApproveReport={handleApproveReport}
+        onRequestRevision={(rep) => setReviewModalReport(rep)}
+      />
 
       {/* SCRIPT PREVIEW & DOWNLOAD MODAL */}
       <ScriptModal

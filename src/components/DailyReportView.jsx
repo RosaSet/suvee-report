@@ -26,7 +26,7 @@ import WeeklyContentModal from './WeeklyContentModal';
 import ScriptModal from './ScriptModal';
 
 export default function DailyReportView({ 
-  dailyReports, 
+  dailyReports = [], 
   onAddReport, 
   onDeleteReport,
   editorReports = [],
@@ -55,10 +55,10 @@ export default function DailyReportView({
   const todayStr = new Date().toISOString().split('T')[0];
 
   // Weekly content counters
-  const week1Count = weeklyContents.filter(c => c.week === 'Week 1').length;
-  const week2Count = weeklyContents.filter(c => c.week === 'Week 2').length;
-  const week3Count = weeklyContents.filter(c => c.week === 'Week 3').length;
-  const week4Count = weeklyContents.filter(c => c.week === 'Week 4').length;
+  const week1Count = (weeklyContents || []).filter(c => c && c.week === 'Week 1').length;
+  const week2Count = (weeklyContents || []).filter(c => c && c.week === 'Week 2').length;
+  const week3Count = (weeklyContents || []).filter(c => c && c.week === 'Week 3').length;
+  const week4Count = (weeklyContents || []).filter(c => c && c.week === 'Week 4').length;
 
   // =========================================================
   // 1. BOOST PAGE & TIKTOK FORM STATE (POP-UP MODAL 1)
@@ -261,11 +261,14 @@ export default function DailyReportView({
   };
 
   // Filtered Boost Reports
-  const filteredBoostReports = dailyReports.filter(r => {
+  const filteredBoostReports = (dailyReports || []).filter(r => {
+    if (!r) return false;
     const matchPlatform = platformFilter === 'All' || r.platform === platformFilter;
-    const matchQuery = !searchQuery || 
-      r.campaignName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      (r.boostLink && r.boostLink.toLowerCase().includes(searchQuery.toLowerCase()));
+    const q = (searchQuery || '').toLowerCase();
+    const matchQuery = !q || 
+      (r.campaignName && r.campaignName.toLowerCase().includes(q)) ||
+      (r.boostLink && r.boostLink.toLowerCase().includes(q)) ||
+      (r.authorName && r.authorName.toLowerCase().includes(q));
     return matchPlatform && matchQuery;
   });
 
@@ -273,16 +276,29 @@ export default function DailyReportView({
   const [selectedScriptContent, setSelectedScriptContent] = useState(null);
 
   // Filtered Weekly Contents (Fix for White Screen ReferenceError)
-  const filteredWeeklyContents = weeklyContents.filter(c => {
+  const filteredWeeklyContents = (weeklyContents || []).filter(c => {
+    if (!c) return false;
     const matchWeek = selectedWeekFilter === 'All' || c.week === selectedWeekFilter;
     const matchType = contentTypeFilter === 'All' || c.contentType === contentTypeFilter;
-    const matchQuery = !searchQuery || 
-      (c.title && c.title.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (c.authorName && c.authorName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (c.notes && c.notes.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (c.scriptFileName && c.scriptFileName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (c.scriptText && c.scriptText.toLowerCase().includes(searchQuery.toLowerCase()));
+    const q = (searchQuery || '').toLowerCase();
+    const matchQuery = !q || 
+      (c.title && c.title.toLowerCase().includes(q)) ||
+      (c.authorName && c.authorName.toLowerCase().includes(q)) ||
+      (c.notes && c.notes.toLowerCase().includes(q)) ||
+      (c.scriptFileName && c.scriptFileName.toLowerCase().includes(q)) ||
+      (c.scriptText && c.scriptText.toLowerCase().includes(q));
     return matchWeek && matchType && matchQuery;
+  });
+
+  // Filtered Editor Reports
+  const filteredEditorReports = (editorReports || []).filter(e => {
+    if (!e) return false;
+    const q = (searchQuery || '').toLowerCase();
+    return !q || 
+      (e.videoTitle && e.videoTitle.toLowerCase().includes(q)) ||
+      (e.authorName && e.authorName.toLowerCase().includes(q)) ||
+      (e.editorName && e.editorName.toLowerCase().includes(q)) ||
+      (e.notes && e.notes.toLowerCase().includes(q));
   });
 
   return (
@@ -737,14 +753,14 @@ export default function DailyReportView({
                 </tr>
               </thead>
               <tbody>
-                {editorReports.length === 0 ? (
+                {filteredEditorReports.length === 0 ? (
                   <tr>
                     <td colSpan="10" style={{ textAlign: 'center', padding: '2rem', color: 'var(--text-muted)' }}>
                       មិនទាន់មានទិន្នន័យការងារ Video Editor ឡើយ
                     </td>
                   </tr>
                 ) : (
-                  editorReports.map((row) => (
+                  filteredEditorReports.map((row) => (
                     <tr key={row.id}>
                       <td style={{ whiteSpace: 'nowrap', fontWeight: 600 }}>{row.date}</td>
                       <td style={{ fontWeight: 700, color: 'var(--text-primary)' }}>

@@ -17,6 +17,8 @@ import {
   DollarSign
 } from 'lucide-react';
 import CreateStaffModal from './CreateStaffModal';
+import StaffInspectionModal from './StaffInspectionModal';
+import ReviewFeedbackModal from './ReviewFeedbackModal';
 
 export default function AdminPortal({ 
   currentUser, 
@@ -26,7 +28,10 @@ export default function AdminPortal({
   onSwitchUser,
   dailyReports = [], 
   editorReports = [],
-  weeklyContents = []
+  weeklyContents = [],
+  onUpdateDailyReport,
+  onUpdateEditorReport,
+  onUpdateWeeklyContent
 }) {
   const [activeSubTab, setActiveSubTab] = useState('staff-list'); // 'staff-list', 'live-reports', 'weekly-content'
   const [showCreateModal, setShowCreateModal] = useState(false);
@@ -36,7 +41,81 @@ export default function AdminPortal({
   const [selectedDeptFilter, setSelectedDeptFilter] = useState('All');
   const [reportSearchQuery, setReportSearchQuery] = useState('');
 
+  // Boss Inspect Staff Modal State (3 Options: Boost, Video Editor, Content)
+  const [inspectedStaff, setInspectedStaff] = useState(null);
+  const [reviewModalReport, setReviewModalReport] = useState(null);
+  const [feedbackToast, setFeedbackToast] = useState('');
+
   const isAdmin = currentUser?.role === 'Admin';
+
+  const handleApproveReport = (reportId, reportType) => {
+    if (reportType === 'editor') {
+      const target = editorReports.find(r => r.id === reportId);
+      if (target && onUpdateEditorReport) {
+        onUpdateEditorReport({
+          ...target,
+          status: 'Ready to Launch',
+          adminFeedback: ''
+        });
+      }
+    } else if (reportType === 'content') {
+      const target = weeklyContents.find(c => c.id === reportId);
+      if (target && onUpdateWeeklyContent) {
+        onUpdateWeeklyContent({
+          ...target,
+          status: 'Ready to Launch',
+          adminFeedback: ''
+        });
+      }
+    } else if (reportType === 'boost') {
+      const target = dailyReports.find(r => r.id === reportId);
+      if (target && onUpdateDailyReport) {
+        onUpdateDailyReport({
+          ...target,
+          status: 'Scale',
+          adminFeedback: ''
+        });
+      }
+    }
+    setFeedbackToast('បានអនុម័តរបាយការណ៍ជោគជ័យ! ✅');
+    setTimeout(() => setFeedbackToast(''), 3000);
+  };
+
+  const handleSubmitFeedback = ({ reportId, reportType, status, adminFeedback }) => {
+    if (reportType === 'editor') {
+      const target = editorReports.find(r => r.id === reportId);
+      if (target && onUpdateEditorReport) {
+        onUpdateEditorReport({
+          ...target,
+          status: 'Needs Revision',
+          adminFeedback: adminFeedback,
+          notes: target.notes ? `${target.notes} | [Boss Feedback]: ${adminFeedback}` : `[Boss Feedback]: ${adminFeedback}`
+        });
+      }
+    } else if (reportType === 'content') {
+      const target = weeklyContents.find(c => c.id === reportId);
+      if (target && onUpdateWeeklyContent) {
+        onUpdateWeeklyContent({
+          ...target,
+          status: 'Needs Revision',
+          adminFeedback: adminFeedback,
+          notes: target.notes ? `${target.notes} | [Boss Feedback]: ${adminFeedback}` : `[Boss Feedback]: ${adminFeedback}`
+        });
+      }
+    } else if (reportType === 'boost') {
+      const target = dailyReports.find(r => r.id === reportId);
+      if (target && onUpdateDailyReport) {
+        onUpdateDailyReport({
+          ...target,
+          status: 'Needs Revision',
+          adminFeedback: adminFeedback,
+          notes: target.notes ? `${target.notes} | [Boss Feedback]: ${adminFeedback}` : `[Boss Feedback]: ${adminFeedback}`
+        });
+      }
+    }
+    setFeedbackToast('បានបញ្ជូនការសុំកែសម្រួលទៅកាន់បុគ្គលិកជោគជ័យ! 📩');
+    setTimeout(() => setFeedbackToast(''), 3000);
+  };
 
   // Calculate Tenure
   const calculateTenure = (dateString) => {
@@ -463,7 +542,28 @@ export default function AdminPortal({
 
                       {/* Actions Cell */}
                       <td style={{ textAlign: 'center', padding: '0.85rem 1rem' }}>
-                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.45rem' }}>
+                          <button
+                            type="button"
+                            className="btn"
+                            style={{ 
+                              fontSize: '0.72rem', 
+                              padding: '0.3rem 0.65rem', 
+                              height: 'auto', 
+                              background: 'rgba(56, 189, 248, 0.15)', 
+                              border: '1px solid #38BDF8', 
+                              color: '#38BDF8',
+                              fontWeight: 700,
+                              display: 'inline-flex',
+                              alignItems: 'center',
+                              gap: '4px'
+                            }}
+                            onClick={() => setInspectedStaff(u)}
+                            title="ពិនិត្យរបាយការណ៍ ៣ ទម្រង់ (Boost, Video Editor, Content)"
+                          >
+                            🔍 ពិនិត្យ ៣ ទម្រង់
+                          </button>
+
                           <button
                             type="button"
                             className="btn btn-outline"
@@ -869,6 +969,53 @@ export default function AdminPortal({
         onAddUser={onAddUser}
         users={users}
       />
+
+      {/* Boss Staff Inspection Modal (3 Options: Boost, Video Editor, Content) */}
+      <StaffInspectionModal
+        isOpen={!!inspectedStaff}
+        onClose={() => setInspectedStaff(null)}
+        staff={inspectedStaff}
+        allStaffs={users}
+        onSelectStaff={(s) => setInspectedStaff(s)}
+        dailyReports={dailyReports}
+        editorReports={editorReports}
+        weeklyContents={weeklyContents}
+        onApproveReport={handleApproveReport}
+        onRequestRevision={(rep) => setReviewModalReport(rep)}
+      />
+
+      {/* Review & Feedback Modal (Boss Reject / Approve) */}
+      <ReviewFeedbackModal
+        isOpen={!!reviewModalReport}
+        onClose={() => setReviewModalReport(null)}
+        report={reviewModalReport}
+        onSubmitFeedback={handleSubmitFeedback}
+        onApproveReport={handleApproveReport}
+      />
+
+      {/* Toast Notification */}
+      {feedbackToast && (
+        <div style={{
+          position: 'fixed',
+          bottom: '24px',
+          right: '24px',
+          background: 'rgba(15, 23, 42, 0.95)',
+          color: '#10B981',
+          border: '1px solid #10B981',
+          padding: '0.85rem 1.25rem',
+          borderRadius: '10px',
+          fontSize: '0.88rem',
+          fontWeight: 700,
+          boxShadow: '0 10px 25px rgba(0,0,0,0.5)',
+          zIndex: 99999,
+          display: 'flex',
+          alignItems: 'center',
+          gap: '8px',
+          backdropFilter: 'blur(8px)'
+        }}>
+          {feedbackToast}
+        </div>
+      )}
 
     </div>
   );

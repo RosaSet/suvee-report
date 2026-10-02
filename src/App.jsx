@@ -6,6 +6,7 @@ import AdminPortal from './components/AdminPortal';
 import LoginModal from './components/LoginModal';
 import ProfileModal from './components/ProfileModal';
 import CreateStaffModal from './components/CreateStaffModal';
+import ErrorBoundary from './components/ErrorBoundary';
 
 import { 
   INITIAL_DAILY_REPORTS, 
@@ -279,11 +280,7 @@ export default function App() {
 
   const handleQuickNewReport = () => {
     setActiveTab('daily-report');
-    setTimeout(() => {
-      if (reportFormRef.current) {
-        reportFormRef.current.scrollIntoView({ behavior: 'smooth' });
-      }
-    }, 100);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const handleExportCSV = () => {
@@ -358,50 +355,55 @@ export default function App() {
 
       {/* Main Content Rendered based on Active Tab */}
       <main className="main-content">
-        {activeTab === 'dashboard' && (
-          <Dashboard 
-            dailyReports={dailyReports}
-            onUpdateDailyReport={handleUpdateDailyReport}
-            editorReports={editorReports}
-            onUpdateEditorReport={handleUpdateEditorReport}
-            weeklyContents={weeklyContents}
-            onUpdateWeeklyContent={handleUpdateWeeklyContent}
-            users={users}
-            currentUser={currentUser}
-            stats={stats}
-            onNavigateToReport={handleQuickNewReport}
-            onOpenAddStaff={() => setShowCreateStaffModal(true)}
-            onClearAllData={handleClearAllData}
-          />
-        )}
+        <ErrorBoundary onReset={() => setActiveTab('dashboard')}>
+          {activeTab === 'dashboard' && (
+            <Dashboard 
+              dailyReports={dailyReports}
+              onUpdateDailyReport={handleUpdateDailyReport}
+              editorReports={editorReports}
+              onUpdateEditorReport={handleUpdateEditorReport}
+              weeklyContents={weeklyContents}
+              onUpdateWeeklyContent={handleUpdateWeeklyContent}
+              users={users}
+              currentUser={currentUser}
+              stats={stats}
+              onNavigateToReport={handleQuickNewReport}
+              onOpenAddStaff={() => setShowCreateStaffModal(true)}
+              onClearAllData={handleClearAllData}
+            />
+          )}
 
-        {activeTab === 'daily-report' && (
-          <DailyReportView 
-            dailyReports={dailyReports}
-            onAddReport={handleAddReport}
-            onDeleteReport={handleDeleteReport}
-            editorReports={editorReports}
-            onAddEditorReport={handleAddEditorReport}
-            onDeleteEditorReport={handleDeleteEditorReport}
-            weeklyContents={weeklyContents}
-            onAddWeeklyContent={handleAddWeeklyContent}
-            onDeleteWeeklyContent={handleDeleteWeeklyContent}
-            currentUser={currentUser}
-          />
-        )}
+          {activeTab === 'daily-report' && (
+            <DailyReportView 
+              dailyReports={dailyReports}
+              onAddReport={handleAddReport}
+              onDeleteReport={handleDeleteReport}
+              editorReports={editorReports}
+              onAddEditorReport={handleAddEditorReport}
+              onDeleteEditorReport={handleDeleteEditorReport}
+              weeklyContents={weeklyContents}
+              onAddWeeklyContent={handleAddWeeklyContent}
+              onDeleteWeeklyContent={handleDeleteWeeklyContent}
+              currentUser={currentUser}
+            />
+          )}
 
-        {activeTab === 'admin-portal' && (
-          <AdminPortal 
-            currentUser={currentUser}
-            users={users}
-            onAddUser={handleAddUser}
-            onDeleteUser={handleDeleteUser}
-            onSwitchUser={handleSwitchUser}
-            dailyReports={dailyReports}
-            editorReports={editorReports}
-            weeklyContents={weeklyContents}
-          />
-        )}
+          {activeTab === 'admin-portal' && (
+            <AdminPortal 
+              currentUser={currentUser}
+              users={users}
+              onAddUser={handleAddUser}
+              onDeleteUser={handleDeleteUser}
+              onSwitchUser={handleSwitchUser}
+              dailyReports={dailyReports}
+              editorReports={editorReports}
+              weeklyContents={weeklyContents}
+              onUpdateDailyReport={handleUpdateDailyReport}
+              onUpdateEditorReport={handleUpdateEditorReport}
+              onUpdateWeeklyContent={handleUpdateWeeklyContent}
+            />
+          )}
+        </ErrorBoundary>
       </main>
 
       {/* Modals */}
